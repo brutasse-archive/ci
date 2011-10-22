@@ -1,5 +1,6 @@
 import datetime
 import itertools
+import logging
 import os
 import shutil
 
@@ -9,6 +10,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from .exceptions import BuildException
 from .utils import Command
+
+logger = logging.getLogger('ci')
 
 
 class Project(models.Model):
@@ -123,17 +126,20 @@ class Build(models.Model):
 
     def delete_build_data(self):
         if os.path.exists(self.build_path):
+            logger.info("Cleaning build data")
             shutil.rmtree(self.build_path)
 
     def execute(self):
         """
         Execute all the things!
         """
+        logger.info("Starting %s" % self.__unicode__())
         self.status = self.RUNNING
         self.start_date = datetime.datetime.now()
         self.save()
 
         if not os.path.isdir(settings.WORKSPACE):
+            logger.info("Creating workspace")
             os.makedirs(settings.WORKSPACE)
 
         self.delete_build_data()
@@ -141,6 +147,7 @@ class Build(models.Model):
 
         self.checkout_source()
         self.run()
+        logger.info("%s finished: SUCCESS" % self.__unicode__())
         self.end_date = datetime.datetime.now()
         self.status = self.SUCCESS
         if not self.project.keep_build_data:
@@ -151,6 +158,7 @@ class Build(models.Model):
         """
         Performs a checkout / clone in the build directory.
         """
+        logger.info("Checking out %s" % self.project.repo)
         cmd = Command('cd %s && %s %s' % (
             settings.WORKSPACE,
             self.project.checkout_command,
@@ -162,9 +170,11 @@ class Build(models.Model):
         """
         Execute the build instructions given by the user.
         """
+        logger.info("Generating build script")
         env = {value.key.key: value.value for value in self.values.all()}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
             f.write(self.project.build_instructions.replace('\r\n', '\n'))
+        logger.info("Running build script")
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
                       environ=env)
         self.check_response(cmd)
@@ -185,6 +195,8 @@ class Build(models.Model):
             self.output += msg + '\n'
             self.status = self.FAILURE
             self.end_date = datetime.datetime.now()
+            logger.info("%s failed: %s" % (self.__unicode__(), msg))
             self.save()
             raise BuildException(msg, cmd)
+        logger.info("Command completed successfully: %s" % cmd.command)
         self.save()
