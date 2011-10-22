@@ -6,3 +6,6 @@ from default_settings import *
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+
+# Avoid parallel builds for easier debugging
+CELERYD_CONCURRENCY = 1
