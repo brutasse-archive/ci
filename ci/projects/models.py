@@ -44,15 +44,53 @@ class Project(models.Model):
         return u'%s' % self.name
 
     @property
-    def checkout_command(self):
+    def vcs_command(self):
         return {self.GIT: 'git clone %s',
                 self.HG: 'hg clone %s',
-                self.SVN: 'svn checkout %s'}[self.repo_type] % self.repo
+                self.SVN: 'svn checkout %s'}[self.repo_type]
+
+    @property
+    def checkout_command(self):
+        return self.vcs_command % self.repo
+
+    @property
+    def local_checkout_command(self):
+        """
+        For VCS that supports it, clone from the local copy instead
+        of from the network.
+        """
+        return self.vcs_command % self.cache_dir
+
+    # Update commands courtesy of Eric Holscher,
+    # http://ericholscher.com/blog/2010/nov/15/correct-commands-check-out-
+    # and-update-vcs-repos/
+
+    @property
+    def update_command(self):
+        return {
+            self.GIT: ('git --git-dir=.git fetch && '
+                       'git --git-dir=.git reset --hard origin/master'),
+            self.HG: ('hg pull && '
+                      'hg update -C .'),
+            self.SVN: ('svn revert --recursive . && '
+                       'svn up --accept theirs-full'),
+        }[self.repo_type]
+
+    @property
+    def cache_dir(self):
+        """
+        Directory where to put the local clone.
+        """
+        prefix = os.path.join(settings.WORKSPACE, 'repos')
+        if not os.path.exists(prefix):
+            os.makedirs(prefix)
+        return os.path.join(prefix, str(self.pk))
 
     def build(self):
         """
         Trigger a build!
         """
+        self.update_source()
         configs = self.configurations.all()
         meta = MetaBuild.objects.create(
             project=self,
@@ -77,6 +115,32 @@ class Project(models.Model):
                 metabuild=meta,
             )
             build.queue()
+
+    def update_source(self):
+        """
+        Projects keep a full clone / checkout of the upstream repo for
+        polling changes.
+        """
+        if os.path.exists(self.cache_dir):
+            cmd = Command('cd %s && %s' % (
+                self.cache_dir,
+                self.update_command,
+            ))
+        else:
+            cmd = Command('cd %s && %s %s' % (
+                os.path.abspath(os.path.join(self.cache_dir, os.pardir)),
+                self.checkout_command,
+                self.pk
+            ))
+        if cmd.return_code != 0:
+            assert False, "%s failed" % cmd.command
+
+    @property
+    def latest_revision(self):
+        """
+        Fetch the latest revision from SCM
+        """
+        pass
 
 
 class Configuration(models.Model):
@@ -151,7 +215,10 @@ class Build(models.Model):
 
     @property
     def build_path(self):
-        return os.path.join(settings.WORKSPACE, str(self.pk))
+        prefix = os.path.join(settings.WORKSPACE, 'builds')
+        if not os.path.exists(prefix):
+            os.makedirs(prefix)
+        return os.path.join(prefix, str(self.pk))
 
     def delete_build_data(self):
         if os.path.exists(self.build_path):
@@ -188,9 +255,13 @@ class Build(models.Model):
         Performs a checkout / clone in the build directory.
         """
         logger.info("Checking out %s" % self.metabuild.project.repo)
+        if self.metabuild.project.repo_type == Project.SVN:
+            command = self.metabuild.project.checkout_command
+        else:
+            command = self.metabuild.project.local_checkout_command
         cmd = Command('cd %s && %s %s' % (
-            settings.WORKSPACE,
-            self.metabuild.project.checkout_command,
+            os.path.join(settings.WORKSPACE, 'builds'),
+            command,
             self.pk,
         ))
         self.check_response(cmd)

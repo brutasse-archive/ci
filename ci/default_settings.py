@@ -116,4 +116,4 @@ import djcelery
 djcelery.setup_loader()
 
 # CI-specific settings
-WORKSPACE = os.path.join(HERE, 'builds')
+WORKSPACE = os.path.join(HERE, 'workspace')

@@ -1,7 +1,7 @@
 from celery.decorators import task
 
 from .exceptions import BuildException
-from .models import Build
+from .models import Build, MetaBuild
 
 
 @task(ignore_result=True)
