@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-mkvirtualenv --python python2 ci
+mkvirtualenv --no-site-packages --python python2 ci
 workon ci
 add2virtualenv .
 pip install -U pip
