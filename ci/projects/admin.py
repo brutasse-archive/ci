@@ -19,6 +19,7 @@ class BuildInline(admin.TabularInline):
 
 class ProjectAdmin(admin.ModelAdmin):
     inlines = [ConfigurationInline]
+    list_display = ('name', 'repo_type', 'sequential', 'latest_revision')
 
 
 class ConfigurationAdmin(admin.ModelAdmin):
@@ -26,10 +27,13 @@ class ConfigurationAdmin(admin.ModelAdmin):
 
 
 class BuildAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('__unicode__', 'status')
+    list_filter = ('status',)
+
 
 class MetaBuildAdmin(admin.ModelAdmin):
     inlines = [BuildInline]
+    list_display = ('__unicode__', 'revision', 'creation_date')
 
 
 admin.site.register(Project, ProjectAdmin)
