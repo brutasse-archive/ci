@@ -34,8 +34,6 @@ class Project(models.Model):
     build_instructions = models.TextField(_('Build instructions'))
     sequential = models.BooleanField(_('Sequential build?'), default=True)
     keep_build_data = models.BooleanField(_('Keep build data'), default=False)
-    last_revision = models.CharField(_('Last revision'), max_length=1023,
-                                     blank=True)
 
     class Meta:
         ordering = ('name',)
@@ -94,7 +92,7 @@ class Project(models.Model):
         configs = self.configurations.all()
         meta = MetaBuild.objects.create(
             project=self,
-            revision=self.last_revision,
+            revision=self.latest_revision,
         )
         if configs:
             products = []
@@ -140,7 +138,23 @@ class Project(models.Model):
         """
         Fetch the latest revision from SCM
         """
-        pass
+        if self.repo_type == self.SVN:
+            cmd = Command('cd %s && svn info' % self.cache_dir)
+            if not cmd.return_code == 0:
+                assert False, "svn info failed"
+            return cmd.out.split('\nRevision: ')[1].split()[0]
+
+        if self.repo_type == self.GIT:
+            cmd = Command('cd %s && git rev-parse HEAD' % self.cache_dir)
+            if not cmd.return_code == 0:
+                assert False, "git rev-parse failed"
+            return cmd.out[:-1]
+
+        if self.repo_type == self.HG:
+            cmd = Command('cd %s && hg summary' % self.cache_dir)
+            if not cmd.return_code == 0:
+                assert False, "hg summary failed"
+            return cmd.out.split('parent: ')[1].split(':')[0]
 
 
 class Configuration(models.Model):
@@ -173,6 +187,12 @@ class MetaBuild(models.Model):
     revision = models.CharField(_('Revision built'), max_length=1023)
     creation_date = models.DateTimeField(_('Date created'),
                                          default=datetime.datetime.now)
+
+    def __unicode__(self):
+        return u'Build #%s of %s' % (self.pk, self.project.name)
+
+    class Meta:
+        ordering = ('-creation_date',)
 
     def queue(self):
         """
@@ -210,8 +230,7 @@ class Build(models.Model):
 
     def __unicode__(self):
         values = ', '.join(map(unicode, self.values.all()))
-        return u'Build #%s (%s) - %s' % (self.pk, values,
-                                         self.get_status_display())
+        return u'Build #%s (%s)' % (self.pk, values)
 
     @property
     def build_path(self):
@@ -257,7 +276,7 @@ class Build(models.Model):
         logger.info("Checking out %s" % self.metabuild.project.repo)
         if self.metabuild.project.repo_type == Project.SVN:
             command = self.metabuild.project.checkout_command
-        else:
+        else:  # DVCS, we have a full local copy
             command = self.metabuild.project.local_checkout_command
         cmd = Command('cd %s && %s %s' % (
             os.path.join(settings.WORKSPACE, 'builds'),
@@ -273,7 +292,8 @@ class Build(models.Model):
         logger.info("Generating build script")
         env = {value.key.key: value.value for value in self.values.all()}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
-            f.write(self.metabuild.project.build_instructions.replace('\r\n', '\n'))
+            f.write(self.metabuild.project.build_instructions.replace('\r\n',
+                                                                      '\n'))
         logger.info("Running build script")
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
                       environ=env)
