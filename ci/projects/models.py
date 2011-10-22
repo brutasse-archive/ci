@@ -34,6 +34,8 @@ class Project(models.Model):
     build_instructions = models.TextField(_('Build instructions'))
     sequential = models.BooleanField(_('Sequential build?'), default=True)
     keep_build_data = models.BooleanField(_('Keep build data'), default=False)
+    last_revision = models.CharField(_('Last revision'), max_length=1023,
+                                     blank=True)
 
     class Meta:
         ordering = ('name',)
@@ -52,6 +54,10 @@ class Project(models.Model):
         Trigger a build!
         """
         configs = self.configurations.all()
+        meta = MetaBuild.objects.create(
+            project=self,
+            revision=self.last_revision,
+        )
         if configs:
             products = []
             for config in configs:
@@ -59,13 +65,18 @@ class Project(models.Model):
             items = itertools.product(*products)
             for values in items:
                 build = Build.objects.create(
-                    project=self,
+                    metabuild=meta,
                 )
+                if not self.sequential:
+                    build.queue()
                 build.values.add(*values)
+            if self.sequential:
+                meta.queue()
         else:
-            Build.objects.create(
-                project=self,
+            build = Build.objects.create(
+                metabuild=meta,
             )
+            build.queue()
 
 
 class Configuration(models.Model):
@@ -89,6 +100,24 @@ class Value(models.Model):
         return u'%s' % self.value
 
 
+class MetaBuild(models.Model):
+    """
+    Stores the metadata for a build axis / matrix
+    """
+    project = models.ForeignKey(Project, verbose_name=_('Project'),
+                                related_name='builds')
+    revision = models.CharField(_('Revision built'), max_length=1023)
+    creation_date = models.DateTimeField(_('Date created'),
+                                         default=datetime.datetime.now)
+
+    def queue(self):
+        """
+        Trigger a sequential build.
+        """
+        from .tasks import execute_metabuild
+        execute_metabuild.delay(self.pk)
+
+
 class Build(models.Model):
     SUCCESS = 'success'
     FAILURE = 'failure'
@@ -102,8 +131,8 @@ class Build(models.Model):
         (PENDING, _('Pending')),
     )
 
-    project = models.ForeignKey(Project, verbose_name=_('Project'),
-                                related_name='builds')
+    metabuild = models.ForeignKey(MetaBuild, verbose_name=_('Meta build'),
+                                  related_name='builds')
     status = models.CharField(_('Status'), max_length=10,
                               choices=STATUSES, default=PENDING)
     creation_date = models.DateTimeField(_('Date created'),
@@ -150,7 +179,7 @@ class Build(models.Model):
         logger.info("%s finished: SUCCESS" % self.__unicode__())
         self.end_date = datetime.datetime.now()
         self.status = self.SUCCESS
-        if not self.project.keep_build_data:
+        if not self.metabuild.project.keep_build_data:
             self.delete_build_data()
         self.save()
 
@@ -158,10 +187,10 @@ class Build(models.Model):
         """
         Performs a checkout / clone in the build directory.
         """
-        logger.info("Checking out %s" % self.project.repo)
+        logger.info("Checking out %s" % self.metabuild.project.repo)
         cmd = Command('cd %s && %s %s' % (
             settings.WORKSPACE,
-            self.project.checkout_command,
+            self.metabuild.project.checkout_command,
             self.pk,
         ))
         self.check_response(cmd)
@@ -173,7 +202,7 @@ class Build(models.Model):
         logger.info("Generating build script")
         env = {value.key.key: value.value for value in self.values.all()}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
-            f.write(self.project.build_instructions.replace('\r\n', '\n'))
+            f.write(self.metabuild.project.build_instructions.replace('\r\n', '\n'))
         logger.info("Running build script")
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
                       environ=env)
@@ -200,3 +229,10 @@ class Build(models.Model):
             raise BuildException(msg, cmd)
         logger.info("Command completed successfully: %s" % cmd.command)
         self.save()
+
+    def queue(self):
+        """
+        Fires a celery task that runs the build.
+        """
+        from .tasks import execute_build  # avoid circular imports
+        execute_build.delay(self.pk)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Project, Configuration, Value, Build
+from .models import Project, Configuration, Value, MetaBuild, Build
 
 
 class ConfigurationInline(admin.TabularInline):
@@ -10,6 +10,11 @@ class ConfigurationInline(admin.TabularInline):
 
 class ValueInline(admin.TabularInline):
     model = Value
+
+
+class BuildInline(admin.TabularInline):
+    model = Build
+    extra = 0
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -23,7 +28,11 @@ class ConfigurationAdmin(admin.ModelAdmin):
 class BuildAdmin(admin.ModelAdmin):
     pass
 
+class MetaBuildAdmin(admin.ModelAdmin):
+    inlines = [BuildInline]
+
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)
 admin.site.register(Build, BuildAdmin)
+admin.site.register(MetaBuild, MetaBuildAdmin)
