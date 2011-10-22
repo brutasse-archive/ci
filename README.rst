@@ -19,4 +19,4 @@ Setup your environment::
 
 Run the dev server::
 
-    foreman start
+    make run
