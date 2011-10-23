@@ -9,6 +9,11 @@
 		<div id="wrapper">
 			<header>
 				<h1><a href="{% url "projects" %}">CI</a></h1>
+				<div id="messages">
+					{% for message in messages %}
+						<p class="msg {{ message.tags }}">{{ message }}</p>
+					{% endfor %}
+				</div>
 			</header>
 
 			{% block content %}{% endblock %}

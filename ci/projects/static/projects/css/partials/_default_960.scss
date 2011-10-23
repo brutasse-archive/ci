@@ -2,6 +2,20 @@
 	@include grid(12);
 }
 
+header {
+	@include clearfix;
+
+	h1 {
+		@include columns(8);
+		@include alpha;
+	}
+
+	#messages {
+		@include columns(4);
+		@include omega;
+	}
+}
+
 .builds {
 	h1, li {
 		@include clearfix;
