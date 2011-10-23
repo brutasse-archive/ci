@@ -29,6 +29,14 @@ STATIC_ROOT = os.path.join(HERE, 'static')
 STATIC_URL = '/static/'
 ADMIN_MEDIA_PREFIX = STATIC_URL + 'admin/'
 
+# CachedStaticFilesStorage recommended for production
+STATICFILES_STORAGE = 'staticfiles.storage.StaticFilesStorage'
+
+STATICFILES_FINDERS = (
+    'staticfiles.finders.FileSystemFinder',
+    'staticfiles.finders.AppDirectoriesFinder',
+)
+
 # XXX people need to change this for deployments
 SECRET_KEY = 'CHANGEME'
 
@@ -57,10 +65,10 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     'django.contrib.admin',
 
     'djcelery',
+    'staticfiles',
 
     'ci.projects',
 )
