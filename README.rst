@@ -7,6 +7,15 @@ Django.
 Don't use it unless you're interested in contributing. In which case, see
 below.
 
+Stack
+-----
+
+* Python
+* Django
+* SQL (Django ORM)
+* Redis
+* Celery
+
 Hacking
 -------
 
