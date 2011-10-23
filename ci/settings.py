@@ -15,6 +15,7 @@ CELERYD_CONCURRENCY = 1
 DIRECTORIES = (
     ('', 'django-admin.py test projects --settings=ci.test_settings'),
 )
+IGNORE_EXTENSIONS = ('sqlite', 'sqlite-journal', 'css', 'scss')
 
 # Disable template caching for development
 TEMPLATE_LOADERS = (
