@@ -115,3 +115,12 @@ class ProjectAxis(generic.FormView):
             return reverse('project_axis', args=[self.project.slug])
         return reverse('project', args=[self.project.slug])
 project_axis = ProjectAxis.as_view()
+
+
+def project_build(request, slug):
+    if request.method == 'POST':
+        project = get_object_or_404(Project, slug=slug)
+        project.build()
+        messages.success(request,
+                         _('A build of %s has been triggered' % project))
+    return redirect(reverse('project', args=[slug]))

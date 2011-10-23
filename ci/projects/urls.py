@@ -14,6 +14,9 @@ urlpatterns = patterns('',
     url(r'^project/(?P<slug>[\w_-]+)/axis/$',
         views.project_axis, name='project_axis'),
 
+    url(r'^project/(?P<slug>[\w_-]+)/build/$',
+        views.project_build, name='project_build'),
+
     url(r'^project/(?P<slug>[\w_-]+)/$', views.project, name='project'),
 
     url(r'^build/(?P<pk>\d+)/$', views.build, name='build'),
