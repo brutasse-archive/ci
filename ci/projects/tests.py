@@ -66,7 +66,7 @@ class ProjectTests(TestCase):
         self._create_project()
         url = reverse('project_axis', args=[self.project.slug])
         response = self.client.get(url)
-        self.assertContains(response, 'Build axis')
+        self.assertContains(response, 'Build axes')
 
         data = {
             'form-TOTAL_FORMS': 1,

@@ -16,7 +16,7 @@
 	</section>
 
 	<section class="axis">
-		<h1>{% trans "Build axis" %}</h1>
+		<h1>{% trans "Build axes" %}</h1>
 		<form method="post" action="{% url "project_axis" object.slug %}">
 			{{ formset.management_form }}
 			{% for form in formset %}
