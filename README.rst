@@ -15,8 +15,20 @@ Setup your environment::
     git clone @git://github.com/brutasse/ci.git
     cd ci
     sh bootstrap.sh
-    django-admin.py syncdb --settings=ci.settings
+    make syncdb
 
-Run the dev server::
+Get `gorun`_.
+
+.. _gorun: https://github.com/peterbe/python-gorun
+
+Run all the things::
 
     make run
+
+This will run:
+
+* Django's runserver
+* The Celery worker(s)
+* Compass for compiling the CSS
+* Gorun for running the tests when code changes (linux-only, cross-platform
+  and native alternatives are welcome)
