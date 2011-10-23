@@ -211,6 +211,12 @@ class Project(models.Model):
             return 'success'
         return 'not running. not failed. not success. what is it?'
 
+    def build_progress(self):
+        total = len(self._builds)
+        done = len([b for b in self._builds if b.status in (b.SUCCESS,
+                                                            b.FAILURE)])
+        return '%s/%s' % (done, total)
+
     def axis_initial(self):
         """
         Returns the initial data for axis forms.
