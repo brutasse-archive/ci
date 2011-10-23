@@ -99,9 +99,25 @@ header {
 	}
 }
 
+ul {
+	padding: 0 0 0 25px;
+	list-style: disc;
+
+	li {
+		padding: 5px;
+	}
+}
+
 h1 {
 	font-size: 1.8em;
 	margin: 18px 0;
+
+	form {
+		display: inline-block;
+		input {
+			font-size: 20px;
+		}
+	}
 }
 h2 {
 	font-size: 1.6em;
@@ -124,9 +140,25 @@ h6 {
 	margin: 10px 0;
 }
 
+pre {
+	font-family: Inconsolata, Monaco, monospace;
+	padding: 5px 0;
+}
+
+p {
+	line-height: 1.3em;
+	padding: 5px 0;
+}
+
 .builds {
 	border-top: 0.5px solid $light-color;
 	border-radius: 5px;
+
+	ul, li {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
 
 	h1, .actions {
 		font-size: 1em;
@@ -245,7 +277,7 @@ form {
 	}
 	textarea {
 		font-size: 1.1em;
-		font-family: Inconsolata, Monaco, sans-serif;
+		font-family: Inconsolata, Monaco, monospace;
 	}
 
 	input[type="checkbox"] {
@@ -276,6 +308,7 @@ footer {
 
 	p {
 		padding: 42px;
+		line-height: 1em;
 
 		a {
 			display: inline-block;

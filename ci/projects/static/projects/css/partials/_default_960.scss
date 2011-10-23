@@ -62,3 +62,14 @@ form {
 		@include prefix(3);
 	}
 }
+
+.build_summary {
+	@include columns(6);
+	@include alpha;
+}
+
+.build_status {
+	@include columns(6);
+	@include omega;
+	margin-top: 2px;
+}

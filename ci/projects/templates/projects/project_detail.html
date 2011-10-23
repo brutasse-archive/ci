@@ -3,6 +3,27 @@
 {% block title %}{{ object }}{% endblock %}
 
 {% block content %}
-	<h1>{{ object }}</h1>
+	<section class="build_summary">
+		<h1>{{ object }}{% if object.build_status != "running" %}
+			<form method="post" action="{% url "project_build" object.slug %}">
+				{% csrf_token %}
+				<input type="submit" value="{% trans "Build now" %}">
+			</form>
+		{% endif %}</h1>
 
+	<h6>{% blocktrans with object.get_repo_type_display as repo_type %}{{ repo_type }} repository{% endblocktrans %}</h6>
+		<p>{{ object.repo|urlize }}</p>
+
+		<h6>{% trans "Build instructions" %} (<a href="{% url "project_admin" object.slug %}">{% trans "Change" %}</a>)</h6>
+		<pre>{{ object.build_instructions }}</pre>
+
+		<h6>{% trans "Build axes" %}</h6>
+		<ul>{% for config in object.configurations.all %}
+				<li><strong>{{ config }}</strong>: {% for val in config.values.all %}{{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+		{% endfor %}</ul>
+	</section>
+
+	<section class="build_status">
+		<h2>{% trans "Build status:" %} {{ object.build_status }}</h2>
+	</section>
 {% endblock %}
