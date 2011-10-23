@@ -29,6 +29,7 @@
 		{% endfor %}
 			<p class="submit">
 				<input type="submit" value="{% trans "Save" %}">
+				<input type="submit" name="_addanother" value="{% trans "Save and add another axis" %}">
 				<a href="{% url "project" object.slug %}">{% trans "Cancel" %}</a>
 			</p>
 		</form>

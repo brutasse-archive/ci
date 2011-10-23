@@ -35,9 +35,10 @@ class AddProject(generic.CreateView):
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.name)
         self.object.save()
-        messages.success(self.request, _('%s has been successfully created. '
-                                         'You may review the build '
-                                         'configuration now.'))
+        messages.success(
+            self.request,
+            _('%s has been successfully created. You may review the build '
+              'configuration now.' % self.object))
         return redirect(self.get_success_url())
 add_project = AddProject.as_view()
 
@@ -110,5 +111,7 @@ class ProjectAxis(generic.FormView):
         return super(ProjectAxis, self).form_valid(form)
 
     def get_success_url(self):
+        if '_addanother' in self.request.POST:
+            return reverse('project_axis', args=[self.project.slug])
         return reverse('project', args=[self.project.slug])
 project_axis = ProjectAxis.as_view()

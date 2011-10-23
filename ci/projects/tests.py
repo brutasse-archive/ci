@@ -33,6 +33,7 @@ class ProjectTests(TestCase):
         response = self.client.post(url, data, follow=True)
         self.assertContains(response,
                             '<h1>Build instructions for django-le-social</h1>')
+        self.assertContains(response, 'django-le-social has been ')
         self.assertContains(response, 'You may review the build config')
         self.assertEqual(len(response.redirect_chain), 1)
 
