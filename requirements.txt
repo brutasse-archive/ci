@@ -4,6 +4,7 @@ anyjson==0.3.1
 celery==2.3.3
 django-appconf==0.4.1
 django-celery==2.3.3
+django-floppyforms==0.4.7
 django-picklefield==0.1.9
 django-staticfiles==1.1.2
 kombu==1.4.1
