@@ -1,12 +1,14 @@
 from django.contrib import messages
 from django.core.urlresolvers import reverse
+from django.http import HttpResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
 from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import ProjectForm, ProjectBuildForm, ConfigurationFormSet
-from .models import Project, MetaBuild
+from .models import Project, MetaBuild, Build
 
 
 class Projects(generic.ListView):
@@ -117,10 +119,19 @@ class ProjectAxis(generic.FormView):
 project_axis = ProjectAxis.as_view()
 
 
+@csrf_exempt
 def project_build(request, slug):
+    """BUILD BUTTON"""
     if request.method == 'POST':
         project = get_object_or_404(Project, slug=slug)
-        project.build()
+        if not Build.objects.filter(
+            metabuild__project=project,
+            status__in=[Build.RUNNING, Build.PENDING],
+        ).exists():
+            project.build()
         messages.success(request,
                          _('A build of %s has been triggered' % project))
-    return redirect(reverse('project', args=[slug]))
+    if 'HTTP_REFERER' in request.META:
+        return redirect(reverse('project', args=[slug]))
+    else:
+        return HttpResponse()
