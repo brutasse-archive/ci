@@ -49,6 +49,11 @@ class DeletionFormSet(BaseFormSet):
                 label=_('Delete this axis?'),
                 required=False,
             )
+        else:
+            form.fields['name'].required = False
+            form.fields['name'].widget.is_required = False
+            form.fields['values'].required = False
+            form.fields['values'].widget.is_required = False
 
 
 ConfigurationFormSet = formset_factory(ConfigurationForm, extra=1,
