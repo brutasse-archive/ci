@@ -1,0 +1,22 @@
+#wrapper, footer p {
+	@include grid(12);
+}
+
+.builds {
+	h1, li {
+		@include clearfix;
+	}
+
+	.name {
+		@include columns(6);
+		@include alpha;
+	}
+
+	.lastbuild, .status {
+		@include columns(3);
+	}
+
+	.status {
+		@include omega;
+	}
+}
