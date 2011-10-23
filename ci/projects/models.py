@@ -5,6 +5,7 @@ import os
 import shutil
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
@@ -26,12 +27,21 @@ class Project(models.Model):
     )
 
     name = models.CharField(_('Name'), max_length=255)
-    slug = models.SlugField(_('Slug'), max_length=255)
+    slug = models.SlugField(_('Slug'), max_length=255, unique=True)
 
-    repo = models.CharField(_('Repository'), max_length=1024)
+    repo = models.CharField(
+        _('Repository'), max_length=1024,
+        help_text=_('The clone or checkout URL of your repository'),
+    )
     repo_type = models.CharField(_('Repository type'), max_length=10,
-                                 choices=REPO_TYPES)
-    build_instructions = models.TextField(_('Build instructions'))
+                                 choices=REPO_TYPES, default=GIT)
+    build_instructions = models.TextField(
+        _('Build instructions'),
+        help_text=_('The commands that need to be run in order to build the '
+                    'project. The instructions are run from the root of your '
+                    'repository. If you have mutliple configurations to run, '
+                    'you will be able to add axis later.'),
+    )
     sequential = models.BooleanField(_('Sequential build?'), default=True)
     keep_build_data = models.BooleanField(_('Keep build data'), default=False)
 
@@ -40,6 +50,9 @@ class Project(models.Model):
 
     def __unicode__(self):
         return u'%s' % self.name
+
+    def get_absolute_url(self):
+        return reverse('project', args=[self.slug])
 
     @property
     def vcs_command(self):
@@ -138,6 +151,8 @@ class Project(models.Model):
         """
         Fetch the latest revision from SCM
         """
+        if not os.path.exists(self.cache_dir):
+            self.update_source()
         if self.repo_type == self.SVN:
             cmd = Command('cd %s && svn info' % self.cache_dir)
             if not cmd.return_code == 0:
@@ -155,6 +170,27 @@ class Project(models.Model):
             if not cmd.return_code == 0:
                 assert False, "hg summary failed"
             return cmd.out.split('parent: ')[1].split(':')[0]
+
+    @property
+    def build_status(self):
+        """
+        Success or failure? Or maybe still running...
+        """
+        if not self.builds.exists():
+            return _('no build yet')
+        if not hasattr(self, '_builds'):
+            self._builds = self.builds.all()[0].builds.all()
+        builds = self._builds
+        running = [build for build in builds if build.status == build.RUNNING]
+        if running:
+            return 'running'
+        failed = [build for build in builds if build.status == build.FAILURE]
+        if failed:
+            return 'failed'
+        success = [build for build in builds if build.status == build.SUCCESS]
+        if success:
+            return 'success'
+        return 'not running. not failed. not success. what is it?'
 
 
 class Configuration(models.Model):

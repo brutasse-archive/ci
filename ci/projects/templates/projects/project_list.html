@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<section class="builds">
+		<h1>
+			<div class="name"><span>{% trans "Project" %}</span></div>
+			<div class="lastbuild"><span>{% trans "Last build" %}</span></div>
+			<div class="status"><span>{% trans "Build status" %}</span></div>
+		</h1>
+		<ul>
+			{% for project in object_list %}
+				<li>
+					<div class="name"><span><a href="{% url "project" project.slug %}">{{ project }}</a></span></div>
+					<div class="lastbuild">
+						{% with project.builds.all.0.creation_date as build_date %}
+							{% if build_date %}
+								{% with build_date|timesince as time_since %}
+									<span title="{{ build_date }}"><a href="{% url "build" project.builds.all.0.pk %}">{% blocktrans %}{{ time_since }} ago{% endblocktrans %}</a></span>
+								{% endwith %}
+							{% else %}
+								<span>{% trans "None" %}</span>
+							{% endif %}
+						{% endwith %}
+					</div>
+					<div class="status {{ project.build_status}}"><span>{{ project.build_status }}</span></div>
+				</li>
+			{% empty %}
+				<li>{% trans "You don't have any project yet." %}</li>
+			{% endfor %}
+		</ul>
+		<div class="actions">
+			<span><a href="{% url "add_project" %}">{% trans "Add a new project" %}</a></span>
+		</div>
+	</section>
+{% endblock %}

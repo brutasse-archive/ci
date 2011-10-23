@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}{% blocktrans %}Edit {{ object }}{% endblocktrans %}{% else %}{% trans "Add a new project" %}{% endif %}{% endblock %}
+
+{% block content %}
+	<section>
+		<h1>{% if object %}{% blocktrans %}Edit {{ object }}{% endblocktrans %}{% else %}{% trans "Add a new project" %}{% endif %}</h1>
+
+		<form method="post" action="{% url "add_project" %}">
+			{% include "form.html" %}
+			<p class="submit">
+				<input type="submit" value="{% trans "Add" %}">
+				<a href="{% url "projects" %}">{% trans "Cancel" %}</a>
+			</p>
+		</form>
+	</section>
+{% endblock %}
