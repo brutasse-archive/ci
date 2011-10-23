@@ -234,8 +234,12 @@ form {
 		padding-top: 8px;
 		label { display: block; }
 	}
-	input, select, textarea {
+	input, select {
 		font-size: 1.2em;
+	}
+	textarea {
+		font-size: 1.1em;
+		font-family: Inconsolata, Monaco, sans-serif;
 	}
 
 	input[type="checkbox"] {
@@ -246,6 +250,15 @@ form {
 	.submit {
 		padding: 10px 0;
 		border-top: 1px solid lighten($background-color, 5%);
+	}
+}
+
+.axis {
+	.field.last {
+		border-bottom: none;
+	}
+	.submit {
+		border: none;
 	}
 }
 

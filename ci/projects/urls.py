@@ -8,10 +8,13 @@ urlpatterns = patterns('',
 
     url(r'^add/$', views.add_project, name='add_project'),
 
-    url(r'^project/(?P<slug>[\w_-]+)/$', views.project, name='project'),
-
     url(r'^project/(?P<slug>[\w_-]+)/admin/$',
         views.project_admin, name='project_admin'),
+
+    url(r'^project/(?P<slug>[\w_-]+)/axis/$',
+        views.project_axis, name='project_axis'),
+
+    url(r'^project/(?P<slug>[\w_-]+)/$', views.project, name='project'),
 
     url(r'^build/(?P<pk>\d+)/$', views.build, name='build'),
 )

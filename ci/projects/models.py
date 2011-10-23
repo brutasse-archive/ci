@@ -42,8 +42,15 @@ class Project(models.Model):
                     'repository. If you have mutliple configurations to run, '
                     'you will be able to add axis later.'),
     )
-    sequential = models.BooleanField(_('Sequential build?'), default=True)
-    keep_build_data = models.BooleanField(_('Keep build data'), default=False)
+    sequential = models.BooleanField(
+        _('Sequential build?'), default=True,
+        help_text=_('Check this box to disallow parallel builds.'),
+    )
+    keep_build_data = models.BooleanField(
+        _('Keep build data'), default=False,
+        help_text=_('Check this box to keep build data on disk. Handle '
+                    'with care!'),
+    )
 
     class Meta:
         ordering = ('name',)
@@ -192,6 +199,18 @@ class Project(models.Model):
             return 'success'
         return 'not running. not failed. not success. what is it?'
 
+    def axis_initial(self):
+        """
+        Returns the initial data for axis forms.
+        """
+        initial = []
+        for axis in self.configurations.all():
+            initial.append({
+                'name': axis.key,
+                'values': ', '.join(map(unicode, axis.values.all())),
+            })
+        return initial
+
 
 class Configuration(models.Model):
     """
@@ -204,6 +223,9 @@ class Configuration(models.Model):
     def __unicode__(self):
         return u'%s' % self.key
 
+    class Meta:
+        unique_together = ('project', 'key')
+
 
 class Value(models.Model):
     key = models.ForeignKey(Configuration, verbose_name=_('Key'),
@@ -212,6 +234,9 @@ class Value(models.Model):
 
     def __unicode__(self):
         return u'%s' % self.value
+
+    class Meta:
+        unique_together = ('key', 'value')
 
 
 class MetaBuild(models.Model):

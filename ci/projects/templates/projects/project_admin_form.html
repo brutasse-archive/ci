@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{% blocktrans %}Build instructions for {{ object }}{% endblocktrans %}{% endblock %}
+
+{% block content %}
+	<section>
+		<h1>{% blocktrans %}Build instructions for {{ object }}{% endblocktrans %}</h1>
+
+		<form method="post" action="{% url "project_admin" object.slug %}">
+			{% include "form.html" %}
+			<p class="submit">
+				<input type="submit" value="{% trans "Save" %}">
+				<a href="{% url "project" object.slug %}">{% trans "Cancel" %}</a>
+			</p>
+		</form>
+	</section>
+
+	<section class="axis">
+		<h1>{% trans "Build axis" %}</h1>
+		<form method="post" action="{% url "project_axis" object.slug %}">
+			{{ formset.management_form }}
+			{% for form in formset %}
+				{% if forloop.last %}
+					<h2>{% trans "Add a new build axis" %}</h2>
+				{% else %}
+					<h2>{% blocktrans with forloop.counter as ct %}Build axis #{{ ct}}{% endblocktrans %}</h2>
+				{% endif %}
+				{% include "form.html" %}
+		{% endfor %}
+			<p class="submit">
+				<input type="submit" value="{% trans "Save" %}">
+				<a href="{% url "project" object.slug %}">{% trans "Cancel" %}</a>
+			</p>
+		</form>
+	</section>
+{% endblock %}
