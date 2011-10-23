@@ -25,7 +25,7 @@
 					<div class="status {{ project.build_status}}"><span>{{ project.build_status }}</span></div>
 				</li>
 			{% empty %}
-				<li>{% trans "You don't have any project yet." %}</li>
+				<li class="empty">{% trans "You don't have any project yet." %}</li>
 			{% endfor %}
 		</ul>
 		<div class="actions">
