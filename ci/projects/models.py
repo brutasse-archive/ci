@@ -1,3 +1,4 @@
+import anyjson as json
 import datetime
 import itertools
 import logging
@@ -40,7 +41,7 @@ class Project(models.Model):
         help_text=_('The commands that need to be run in order to build the '
                     'project. The instructions are run from the root of your '
                     'repository. If you have mutliple configurations to run, '
-                    'you will be able to add axis later.'),
+                    'you can configure build axis separately.'),
     )
     sequential = models.BooleanField(
         _('Sequential build?'), default=True,
@@ -110,22 +111,33 @@ class Project(models.Model):
         """
         self.update_source()
         configs = self.configurations.all()
+        if configs:
+            products = []
+            matrix = {}
+            for config in configs:
+                matrix[config.key] = []
+                values = config.values.all()
+                products.append(values)
+                for val in values:
+                    matrix[config.key].append(val.value)
+            items = itertools.product(*products)
+        else:
+            matrix = {}
+
         meta = MetaBuild.objects.create(
             project=self,
             revision=self.latest_revision,
+            matrix=json.dumps(matrix),
         )
+
         if configs:
-            products = []
-            for config in configs:
-                products.append(config.values.all())
-            items = itertools.product(*products)
             for values in items:
                 build = Build.objects.create(
                     metabuild=meta,
+                    values=json.dumps({v.key.key: v.value for v in values}),
                 )
                 if not self.sequential:
                     build.queue()
-                build.values.add(*values)
             if self.sequential:
                 meta.queue()
         else:
@@ -248,6 +260,7 @@ class MetaBuild(models.Model):
     revision = models.CharField(_('Revision built'), max_length=1023)
     creation_date = models.DateTimeField(_('Date created'),
                                          default=datetime.datetime.now)
+    matrix = models.TextField(_('Build matrix'), blank=True)
 
     def __unicode__(self):
         return u'Build #%s of %s' % (self.pk, self.project.name)
@@ -284,14 +297,12 @@ class Build(models.Model):
                                          default=datetime.datetime.now)
     start_date = models.DateTimeField(_('Date started'), null=True)
     end_date = models.DateTimeField(_('Date ended'), null=True)
-    values = models.ManyToManyField(Value, blank=True,
-                                    verbose_name=_('Values'),
-                                    related_name='builds')
+    values = models.TextField(_('Values'), blank=True)
     output = models.TextField(_('Build output'), blank=True)
 
     def __unicode__(self):
-        values = ', '.join(map(unicode, self.values.all()))
-        return u'Build #%s (%s)' % (self.pk, values)
+        values = json.loads(self.values)
+        return u'Build #%s (%s)' % (self.pk, ", ".join(values.values()))
 
     @property
     def build_path(self):
@@ -351,7 +362,7 @@ class Build(models.Model):
         Execute the build instructions given by the user.
         """
         logger.info("Generating build script")
-        env = {value.key.key: value.value for value in self.values.all()}
+        env = json.loads(self.values) if self.values else {}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
             f.write(self.metabuild.project.build_instructions.replace('\r\n',
                                                                       '\n'))
@@ -378,6 +389,8 @@ class Build(models.Model):
             self.end_date = datetime.datetime.now()
             logger.info("%s failed: %s" % (self.__unicode__(), msg))
             self.save()
+            if not self.metabuild.project.keep_build_data:
+                self.delete_build_data()
             raise BuildException(msg, cmd)
         logger.info("Command completed successfully: %s" % cmd.command)
         self.save()
