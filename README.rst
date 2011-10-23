@@ -12,7 +12,7 @@ Hacking
 
 Setup your environment::
 
-    git clone @git://github.com/brutasse/ci.git
+    git clone git://github.com/brutasse/ci.git
     cd ci
     sh bootstrap.sh
     make syncdb
@@ -31,4 +31,4 @@ This will run:
 * The Celery worker(s)
 * Compass for compiling the CSS
 * Gorun for running the tests when code changes (linux-only, cross-platform
-  and native alternatives are welcome)
+  *and* native alternatives are welcome)
