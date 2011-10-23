@@ -1,0 +1,26 @@
+{% load staticfiles %}<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="{% static "projects/css/screen.css" %}">
+		<title>{% block title %}Projects{% endblock %} - CI</title>
+	</head>
+	<body>
+		<div id="wrapper">
+			<header>
+				<h1><a href="{% url "projects" %}">CI</a></h1>
+			</header>
+
+			{% block content %}{% endblock %}
+			<div id="push"></div>
+		</div>
+
+		<footer>
+			<p>
+				<a href="https://github.com/brutasse/ci">{% trans "Powered by CI" %}</a>
+				<a title="TODO: tests and docs :)">{% trans "Help" %}</a>
+				<a href="https://github.com/brutasse/ci/contributors">{% trans "Authors" %}</a>
+			</p>
+		</footer>
+	</body>
+</html>
