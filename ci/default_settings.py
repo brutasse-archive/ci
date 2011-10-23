@@ -68,6 +68,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     'djcelery',
+    'floppyforms',
     'staticfiles',
 
     'ci.projects',
