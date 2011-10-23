@@ -1,7 +1,7 @@
 CI
 ==
 
-**[Work In Progress]** A simple continuation integration tool written with
+**[Work In Progress]** A simple continuation integration server written with
 Django.
 
 Don't use it unless you're interested in contributing. In which case, see
