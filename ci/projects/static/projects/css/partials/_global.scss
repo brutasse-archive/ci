@@ -151,9 +151,6 @@ p {
 }
 
 .builds {
-	border-top: 0.5px solid $light-color;
-	border-radius: 5px;
-
 	ul, li {
 		list-style: none;
 		margin: 0;
@@ -163,30 +160,24 @@ p {
 	h1, .actions {
 		font-size: 1em;
 		font-weight: bold;
-		background: $light-color;
-		color: $white;
+		color: $vlight-color;
 	}
 
 	h1 {
-		border-top-left-radius: 5px;
-		border-top-right-radius: 5px;
 		margin: 0;
 	}
 
 	.actions {
-		border-bottom-left-radius: 5px;
-		border-bottom-right-radius: 5px;
-
 		span {
 			display: block;
-			padding: 10px;
+			padding: 10px 0;
 		}
 
 		a {
-			color: lighten($vlight-color, 30%);
+			color: $vlight-color;
 			&:hover {
 				text-decoration: none;
-				color: $white;
+				color: $light-color;
 			}
 		}
 	}
@@ -194,51 +185,39 @@ p {
 	.name, .lastbuild, .status {
 		span {
 			display: block;
-			padding: 15px 10px;
+			padding: 15px 0;
 		}
 	}
 
-	h1 span { padding: 10px !important; }
+	h1 span { padding: 10px 0 !important; }
 
 	li.empty {
-		padding: 10px;
-		border-left: 1px solid $light-color;
-		border-right: 1px solid $light-color;
+		padding: 10px 0;
 	}
 
-	li .name {
-		text-shadow: 0 1px 0 $background-color;
+	li {
+		.name, .lastbuild {
+			text-shadow: 0 1px 0 $white;
+		}
 
-		span {
-			border-left: 1px solid $light-color;
+		.status span {
+			display: inline-block;
+			margin-top: 8px;
+			@include badge;
+		}
+
+		.failed span {
+			@include fail-badge;
+		}
+		.success span {
+			@include success-badge;
+		}
+		.running span {
+			@include notice-badge;
 		}
 	}
 
-	li .status {
-		padding: 9px 0;
-		border-right: 1px solid $light-color;
-		margin-left: 9px;
-	}
 
-	li .status span {
-		display: inline-block;
-		@include badge;
-		margin-left: 10px;
-	}
-
-	li .failed span {
-		@include fail-badge;
-	}
-	li .success span {
-		@include success-badge;
-	}
-	li .running span {
-		@include notice-badge;
-	}
-
-	li:nth-child(2n) {
-		background: lighten($footer-color, 7%);
-	}
 }
 
 .errorlist {
