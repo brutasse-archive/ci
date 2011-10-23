@@ -19,6 +19,12 @@ Stack
 Hacking
 -------
 
+Add to your ``~/.virtualenvs/postactivate``::
+
+    export GEM_HOME="$VIRTUAL_ENV/gems"
+    export GEM_PATH=""
+    export PATH=$PATH:$GEM_HOME/bin
+
 Setup your environment::
 
     git clone git://github.com/brutasse/ci.git
