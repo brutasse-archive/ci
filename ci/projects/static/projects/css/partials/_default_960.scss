@@ -20,3 +20,31 @@
 		@include omega;
 	}
 }
+
+form {
+	.field, .submit {
+		@include clearfix;
+	}
+
+	.title {
+		@include columns(3);
+		@include alpha;
+	}
+
+	.input {
+		@include columns(5);
+		@include omega;
+	}
+	input {
+		&[type="text"], &[type="email"], &[type="url"] {
+			width: 370px;
+		}
+	}
+	textarea {
+		width: 370px;
+	}
+
+	.submit {
+		@include prefix(3);
+	}
+}
