@@ -76,6 +76,11 @@ class ProjectAdmin(generic.UpdateView):
             _('%s has been successfully updated') % self.object.name,
         )
         return response
+
+    def get_success_url(self):
+        if '_continue' in self.request.POST:
+            return reverse('project_admin', args=[self.object.slug])
+        return super(ProjectAdmin, self).get_success_url()
 project_admin = ProjectAdmin.as_view()
 
 

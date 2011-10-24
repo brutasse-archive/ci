@@ -63,6 +63,11 @@ class ProjectTests(TestCase):
         self.assertContains(response, 'successfully updated')
         self.assertEqual(len(response.redirect_chain), 1)
 
+        # Save and continue editing
+        data.update({'_continue': True})
+        response = self.client.post(url, data)
+        self.assertRedirects(response, url)
+
     def test_project_axis(self):
         """Managing multi-configuration builds"""
         self._create_project()

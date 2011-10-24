@@ -10,6 +10,7 @@
 			{% include "form.html" %}
 			<p class="submit">
 				<input type="submit" value="{% trans "Save" %}">
+				<input type="submit" name="_continue" value="{% trans "Save and continue editing" %}">
 				<a href="{% url "project" object.slug %}">{% trans "Cancel" %}</a>
 			</p>
 		</form>
