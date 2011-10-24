@@ -136,9 +136,17 @@ def project_build(request, slug):
             metabuild__project=project,
             status__in=[Build.RUNNING, Build.PENDING],
         ).exists():
-            project.build()
-        messages.success(request,
-                         _('A build of %s has been triggered' % project))
+            triggered = project.build()
+            if triggered:
+                messages.success(
+                    request,
+                    _('A build of %s has been triggered' % project),
+                )
+            else:
+                messages.info(
+                    request,
+                    _('The latest revision has already been built'),
+                )
     if 'HTTP_REFERER' in request.META:
         return redirect(reverse('project', args=[slug]))
     else:

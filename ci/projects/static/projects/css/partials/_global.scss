@@ -62,7 +62,7 @@ $success-bg-color: #98df8a;
 	@include badge($running-color, $running-bg-color);
 }
 
-@mixin notice-msg {
+@mixin warning-msg {
 	@include msg($running-color, $running-bg-color);
 }
 
@@ -107,8 +107,8 @@ header {
 			@include msg;
 			margin-bottom: 5px;
 
-			&.info {
-				@include notice-msg;
+			&.warning {
+				@include warning-msg;
 			}
 
 			&.success {

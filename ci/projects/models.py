@@ -107,9 +107,15 @@ class Project(models.Model):
 
     def build(self):
         """
-        Trigger a build!
+        Triggers a build!
+
+        Returns True if the build is triggered, False if not
+        (revisions are not built twice).
         """
         self.update_source()
+        if self.builds.filter(revision=self.latest_revision):
+            # Latest rev already build -- don't bother
+            return False
         configs = self.configurations.all()
         if configs:
             products = []
@@ -145,6 +151,7 @@ class Project(models.Model):
                 metabuild=meta,
             )
             build.queue()
+        return True
 
     def update_source(self):
         """
