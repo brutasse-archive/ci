@@ -134,6 +134,7 @@ class Project(models.Model):
             project=self,
             revision=self.latest_revision,
             matrix=json.dumps(matrix),
+            build_instructions=self.build_instructions,
         )
 
         if configs:
@@ -273,7 +274,12 @@ class MetaBuild(models.Model):
     revision = models.CharField(_('Revision built'), max_length=1023)
     creation_date = models.DateTimeField(_('Date created'),
                                          default=datetime.datetime.now)
+
+    # These fields are serialized from the project. Lets users safely alter
+    # config values when a build has already been trigerred: the metabuild
+    # has everything it needs.
     matrix = models.TextField(_('Build matrix'), blank=True)
+    build_instructions = models.TextField(_('Build instructions'))
 
     def __unicode__(self):
         return u'Build #%s of %s' % (self.pk, self.project.name)
@@ -391,8 +397,7 @@ class Build(models.Model):
         logger.info("Generating build script")
         env = json.loads(self.values) if self.values else {}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
-            f.write(self.metabuild.project.build_instructions.replace('\r\n',
-                                                                      '\n'))
+            f.write(self.metabuild.build_instructions.replace('\r\n', '\n'))
         logger.info("Running build script")
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
                       environ=env)
