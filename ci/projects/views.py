@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.sites.models import RequestSite
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import redirect, get_object_or_404
@@ -25,6 +26,9 @@ class ProjectDetails(generic.DetailView):
             ctx['last_build'] = self.object.builds.all()[0]
         except IndexError:
             pass
+        ctx.update({
+            'site': RequestSite(self.request),
+        })
         return ctx
 project = ProjectDetails.as_view()
 
