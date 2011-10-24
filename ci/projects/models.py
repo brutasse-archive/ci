@@ -49,8 +49,9 @@ class Project(models.Model):
     )
     keep_build_data = models.BooleanField(
         _('Keep build data'), default=False,
-        help_text=_('Check this box to keep build data on disk. Handle '
-                    'with care!'),
+        help_text=_('Check this box to keep build data on disk. Useful for '
+                    'debugging builds but potentially eats a lot of disk '
+                    'space.'),
     )
 
     class Meta:
@@ -103,7 +104,7 @@ class Project(models.Model):
         prefix = os.path.join(settings.WORKSPACE, 'repos')
         if not os.path.exists(prefix):
             os.makedirs(prefix)
-        return os.path.join(prefix, str(self.pk))
+        return os.path.join(prefix, self.slug)
 
     def build(self):
         """
@@ -168,7 +169,7 @@ class Project(models.Model):
             cmd = Command('cd %s && %s %s' % (
                 os.path.abspath(os.path.join(self.cache_dir, os.pardir)),
                 self.checkout_command,
-                self.pk
+                self.slug
             ))
         if cmd.return_code != 0:
             assert False, "%s failed" % cmd.command
