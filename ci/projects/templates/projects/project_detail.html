@@ -25,5 +25,16 @@
 
 	<section class="build_status">
 		<h2>{% trans "Build status:" %} {{ object.build_status }}</h2>
+
+		<ul>
+			{% for build in last_build.builds.all %}
+				<li>
+					<div class="name"><a href="{% url "build" build.pk %}">#{{ build.pk }}</a>
+						<span>{% for key, val in build.values_data.items %}<strong>{{ key}}:</strong> {{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+					</div>
+					<div class="status {{ build.status }}"><span>{{ build.status }}</span></div>
+				</li>
+			{% endfor %}
+		</ul>
 	</section>
 {% endblock %}

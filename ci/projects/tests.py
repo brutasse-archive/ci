@@ -1,7 +1,9 @@
+import anyjson as json
+
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from .models import Project, Configuration, Value
+from .models import Project, Configuration, Value, MetaBuild
 
 
 class ProjectTests(TestCase):
@@ -121,3 +123,25 @@ class ProjectTests(TestCase):
         self.assertEqual(len(response.redirect_chain), 1)
         self.assertEqual(Configuration.objects.count(), 1)
         self.assertEqual(Value.objects.count(), 2)
+
+    def test_build_axis(self):
+        """Displaying configuration axes"""
+        self._create_project()
+
+        metabuild = MetaBuild.objects.create(
+            project=self.project,
+            matrix=json.dumps({'python': ['py25', 'py26', 'py27'],
+                               'django': ['1.2', '1.3', 'trunk']}),
+            revision='1',
+        )
+
+        build = metabuild.builds.create(
+            status='running',
+            values=json.dumps({'python': 'py25', 'django': '1.2'}),
+        )
+
+        url = reverse('project', args=[self.project.slug])
+        response = self.client.get(url)
+        build_url = reverse('build', args=[build.pk])
+        self.assertContains(response, build_url)
+        self.assertContains(response, 'Build status: running')

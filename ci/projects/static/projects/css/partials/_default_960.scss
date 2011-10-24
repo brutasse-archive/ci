@@ -16,6 +16,11 @@ header {
 	}
 }
 
+#content {
+	@include clearfix;
+	margin-bottom: 1em;
+}
+
 .builds {
 	h1, li {
 		@include clearfix;
@@ -31,6 +36,22 @@ header {
 	}
 
 	.status {
+		@include omega;
+	}
+}
+
+.build_status {
+	li {
+		@include clearfix;
+	}
+
+	.name {
+		@include columns(4);
+		@include alpha;
+	}
+
+	.status {
+		@include columns(2);
 		@include omega;
 	}
 }

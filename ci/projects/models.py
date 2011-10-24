@@ -281,6 +281,13 @@ class MetaBuild(models.Model):
         from .tasks import execute_metabuild
         execute_metabuild.delay(self.pk)
 
+    @property
+    def matrix_data(self):
+        """
+        Returns the build matrix, json-loaded.
+        """
+        return json.loads(self.matrix)
+
 
 class Build(models.Model):
     SUCCESS = 'success'
@@ -307,8 +314,11 @@ class Build(models.Model):
     output = models.TextField(_('Build output'), blank=True)
 
     def __unicode__(self):
-        values = json.loads(self.values)
-        return u'Build #%s (%s)' % (self.pk, ", ".join(values.values()))
+        return u'Build #%s (%s)' % (self.pk,
+                                    ", ".join(self.values_data.values()))
+
+    class Meta:
+        ordering = ('-id',)
 
     @property
     def build_path(self):
@@ -316,6 +326,10 @@ class Build(models.Model):
         if not os.path.exists(prefix):
             os.makedirs(prefix)
         return os.path.join(prefix, str(self.pk))
+
+    @property
+    def values_data(self):
+        return json.loads(self.values)
 
     def delete_build_data(self):
         if os.path.exists(self.build_path):

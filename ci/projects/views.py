@@ -18,6 +18,14 @@ projects = Projects.as_view()
 
 class ProjectDetails(generic.DetailView):
     model = Project
+
+    def get_context_data(self, **kwargs):
+        ctx = super(ProjectDetails, self).get_context_data(**kwargs)
+        try:
+            ctx['last_build'] = self.object.builds.all()[0]
+        except IndexError:
+            pass
+        return ctx
 project = ProjectDetails.as_view()
 
 

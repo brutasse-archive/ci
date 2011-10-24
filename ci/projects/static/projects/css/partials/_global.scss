@@ -244,8 +244,38 @@ strong {
 			@include notice-badge;
 		}
 	}
+}
 
+.build_status {
+	ul, li {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
 
+	.name {
+		margin: 10px 0;
+		span {
+			font-size: 0.8em;
+			color: lighten($text-color, 10%);
+		}
+	}
+
+	.status span {
+		display: inline-block;
+		margin-top: 3px;
+		@include badge;
+	}
+
+	.failure span {
+		@include fail-badge;
+	}
+	.success span {
+		@include success-badge;
+	}
+	.running span {
+		@include notice-badge;
+	}
 }
 
 .errorlist {
