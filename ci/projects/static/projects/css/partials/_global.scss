@@ -260,7 +260,26 @@ strong {
 			color: lighten($text-color, 10%);
 		}
 	}
+}
 
+.build {
+	h1 .status {
+		font-size: 16px;
+		text-align: right;
+	}
+
+	.output {
+		overflow: auto;
+	}
+
+	.meta {
+		color: lighten($text-color, 20%);
+		text-shadow: 1px 0 0 $white;
+		margin-bottom: 10px;
+	}
+}
+
+.build_status, .build {
 	.status span {
 		display: inline-block;
 		margin-top: 3px;

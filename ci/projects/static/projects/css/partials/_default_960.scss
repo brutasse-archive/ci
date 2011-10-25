@@ -56,6 +56,32 @@ header {
 	}
 }
 
+.build {
+	h1 {
+		@include clearfix;
+
+		div {
+			@include columns(8);
+			@include alpha;
+		}
+
+		.status {
+			@include columns(4);
+			@include omega;
+		}
+	}
+
+	.summary {
+		@include columns(3);
+		@include alpha;
+	}
+
+	.output {
+		@include columns(9);
+		@include omega;
+	}
+}
+
 form {
 	.field, .submit {
 		@include clearfix;

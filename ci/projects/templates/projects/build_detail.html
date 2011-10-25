@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<section class="build">
+		<h1>
+			<div>{% blocktrans with object.pk as build_id %}Build #{{ build_id }}{% endblocktrans %}<span></div>
+			<div class="status {{ object.status }}"><span>{{ object.status }}</span></div>
+		</h1>
+		<div class="meta">
+			{% with object.metabuild as meta %}{% url "project" meta.project.slug as project_url %}
+				{% blocktrans with meta.pk as metabuild_id and meta.project.name as name %}from build #{{ metabuild_id }} of <a href="{{ project_url }}">{{ name }}</a>{% endblocktrans %}
+			{% endwith %}
+		</div>
+
+		<div class="summary">
+			<h6>{% trans "Configuration values" %}</h6>
+			<ul>{% for key, value in object.values_data.items %}
+					<li><strong>{{ key }}</strong>: {{ value }}</li>
+			{% endfor %}</li>
+		</div>
+
+		<div class="output">
+			<h6>{% trans "Build output" %}</h6>
+			<pre>{{ object.output }}</pre>
+		</div>
+	</section>
+{% endblock %}

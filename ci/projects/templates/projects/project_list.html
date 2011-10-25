@@ -15,7 +15,7 @@
 						{% with project.builds.all.0.creation_date as build_date %}
 							{% if build_date %}
 								{% with build_date|timesince as time_since %}
-									<span title="{{ build_date }}"><a href="{% url "build" project.builds.all.0.pk %}">{% blocktrans %}{{ time_since }} ago{% endblocktrans %}</a></span>
+									<span title="{{ build_date }}"><a href="{% url "project" project.slug %}">{% blocktrans %}{{ time_since }} ago{% endblocktrans %}</a></span>
 								{% endwith %}
 							{% else %}
 								<span>{% trans "None" %}</span>

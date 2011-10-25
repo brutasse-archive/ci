@@ -9,7 +9,7 @@ from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 
 from .forms import ProjectForm, ProjectBuildForm, ConfigurationFormSet
-from .models import Project, MetaBuild, Build
+from .models import Project, Build
 
 
 class Projects(generic.ListView):
@@ -34,7 +34,7 @@ project = ProjectDetails.as_view()
 
 
 class BuildDetails(generic.DetailView):
-    model = MetaBuild
+    model = Build
 build = BuildDetails.as_view()
 
 
