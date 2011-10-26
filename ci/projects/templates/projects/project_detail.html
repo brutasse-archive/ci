@@ -5,7 +5,7 @@
 {% block content %}
 	<section class="build_summary">
 		<h1>{{ object }}{% if object.build_status != "running" %}
-			<form method="post" action="{% url "project_build" object.slug %}">
+			<form method="post" action="{% url "project_trigger_build" object.slug %}">
 				{% csrf_token %}
 				<input type="submit" value="{% trans "Build now" %}">
 			</form>
@@ -23,7 +23,7 @@
 		{% endfor %}</ul>
 
 		<h6>{% trans "Build URL" %}</h6>
-		<p>{% trans "To build this project automatically on pushes, create a hook issuing a POST request to this URL:" %} <pre>http://{{ site.domain }}{% url "project_build" object.slug %}</pre>
+		<p>{% trans "To build this project automatically on pushes, create a hook issuing a POST request to this URL:" %} <pre>http://{{ site.domain }}{% url "project_trigger_build" object.slug %}</pre>
 	</section>
 
 	<section class="build_status">

@@ -15,7 +15,7 @@ urlpatterns = patterns('',
         views.project_axis, name='project_axis'),
 
     url(r'^project/(?P<slug>[\w_-]+)/build/$',
-        views.project_build, name='project_build'),
+        views.project_trigger_build, name='project_trigger_build'),
 
     url(r'^project/(?P<slug>[\w_-]+)/$', views.project, name='project'),
 

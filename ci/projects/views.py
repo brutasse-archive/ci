@@ -137,7 +137,7 @@ project_axis = ProjectAxis.as_view()
 
 
 @csrf_exempt
-def project_build(request, slug):
+def project_trigger_build(request, slug):
     """BUILD BUTTON"""
     if request.method == 'POST':
         project = get_object_or_404(Project, slug=slug)
