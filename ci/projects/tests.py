@@ -24,6 +24,13 @@ class ProjectTests(TestCase):
             revision='1',
         )
 
+    def _create_build(self):
+        self.build = self.metabuild.builds.create(
+            status='success',
+            values=json.dumps({'python': 'py27', 'django': 'trunk'}),
+            output='Build finished: SUCCESS',
+        )
+
     def test_project_list(self):
         url = reverse('projects')
         response = self.client.get(url)
@@ -157,12 +164,39 @@ class ProjectTests(TestCase):
         """Detailed page for a single build"""
         self._create_project()
         self._create_metabuild()
-        build = self.metabuild.builds.create(
-            status='success',
-            values=json.dumps({'python': 'py27', 'django': 'trunk'}),
-            output='Build finished: SUCCESS',
-        )
+        self._create_build()
 
-        url = reverse('build', args=[build.pk])
+        url = reverse('build', args=[self.build.pk])
         response = self.client.get(url)
         self.assertContains(response, 'success')
+
+    def test_delete_build(self):
+        """Delete a build"""
+        self._create_project()
+        self._create_metabuild()
+        self._create_build()
+
+        url = reverse('delete_build', args=[self.project.slug,
+                                            self.metabuild.pk])
+        response = self.client.get(url)
+        self.assertContains(response, 'Delete')
+        self.assertEqual(MetaBuild.objects.count(), 1)
+
+        response = self.client.post(url, {})
+        self.assertRedirects(response, reverse('project',
+                                               args=[self.project.slug]))
+        self.assertEqual(MetaBuild.objects.count(), 0)
+
+        # Disallow deleting a build that's not success or failure
+        self._create_metabuild()
+        self._create_build()
+        self.build.status = 'running'
+        self.build.save()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(MetaBuild.objects.count(), 1)
+
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(MetaBuild.objects.count(), 1)

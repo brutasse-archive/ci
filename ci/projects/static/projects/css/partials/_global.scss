@@ -297,6 +297,13 @@ strong {
 	}
 }
 
+.delete {
+	font-size: 12.8px;
+	a {
+		color: $failure-color;
+	}
+}
+
 .errorlist {
 	background: lighten($failure-color, 16%);
 	color: darken($failure-color, 20%);

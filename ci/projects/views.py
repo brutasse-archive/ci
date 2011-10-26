@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.sites.models import RequestSite
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import redirect, get_object_or_404
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
@@ -9,7 +9,7 @@ from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 
 from .forms import ProjectForm, ProjectBuildForm, ConfigurationFormSet
-from .models import Project, Build
+from .models import Project, Build, MetaBuild
 
 
 class Projects(generic.ListView):
@@ -31,6 +31,23 @@ class ProjectDetails(generic.DetailView):
         })
         return ctx
 project = ProjectDetails.as_view()
+
+
+class DeleteBuild(generic.DeleteView):
+    model = MetaBuild
+
+    def get_object(self):
+        object_ = super(DeleteBuild, self).get_object()
+        if object_.project.build_status not in ('failure', 'success'):
+            # Project is being built, don't delete
+            raise Http404
+        return object_
+
+    def get_success_url(self):
+        messages.success(self.request,
+                         _("Build #%s has been deleted" % self.object.pk))
+        return reverse('project', args=[self.object.project.slug])
+delete_build = DeleteBuild.as_view()
 
 
 class BuildDetails(generic.DetailView):

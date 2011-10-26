@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}{% blocktrans with object.pk as build_id %}Delete build #{{ build_id }}{% endblocktrans %}{% endblock %}
+
+{% block content %}
+	<section>{% url "project" object.project.slug as project_url %}
+		<h1>{% blocktrans with object.pk as build_id %}Delete build #{{ build_id }}?{% endblocktrans %}</h1>
+
+		<p>{% blocktrans with build_id=object.pk project_name=object.project.name %}You are about to delete build #{{ build_id }} of <a href="{{ project_url }}">{{ project_name }}</a>.{% endblocktrans %}{% blocktrans count childs_count=object.builds.count %}{% plural %}This will delete the {{ childs_count }} elements of the build axes.{% endblocktrans %}</p>
+
+		<form method="post" action="{% url "delete_build" object.project.slug object.pk %}">
+			{% csrf_token %}
+			<input type="submit" value="{% trans "Delete" %}">
+			<a href="{% url "project" object.project.slug %}">{% trans "Cancel" %}</a>
+		</form>
+	</section>
+{% endblock %}

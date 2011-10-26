@@ -39,5 +39,11 @@
 				</li>
 			{% endfor %}
 		</ul>
+
+		{% if last_build %}
+			{% if object.build_status == "failure" or object.build_status = "success" %}
+				<p class="delete"><a href="{% url "delete_build" object.slug last_build.pk %}">{% trans "Delete build" %}</a></p>
+			{% endif %}
+		{% endif %}
 	</section>
 {% endblock %}
