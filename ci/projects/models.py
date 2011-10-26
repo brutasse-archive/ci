@@ -209,9 +209,9 @@ class Project(models.Model):
         return self.builds.all()[0].build_status
 
     def build_progress(self):
-        total = len(self._builds)
-        done = len([b for b in self._builds if b.status in (b.SUCCESS,
-                                                            b.FAILURE)])
+        builds = self.builds.all()[0].builds.all()
+        total = len(builds)
+        done = len([b for b in builds if b.status in (b.SUCCESS, b.FAILURE)])
         return '%s/%s' % (done, total)
 
     def axis_initial(self):
