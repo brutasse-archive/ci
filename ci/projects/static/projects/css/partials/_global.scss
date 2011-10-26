@@ -271,15 +271,19 @@ strong {
 	.output {
 		overflow: auto;
 	}
+}
 
-	.meta {
-		color: lighten($text-color, 20%);
-		text-shadow: 1px 0 0 $white;
-		margin-bottom: 10px;
-	}
+.meta {
+	color: lighten($text-color, 20%);
+	text-shadow: 1px 0 0 $white;
+	margin-bottom: 10px;
 }
 
 .build_status, .build {
+	.status {
+		text-align: right;
+	}
+
 	.status span {
 		display: inline-block;
 		margin-top: 3px;

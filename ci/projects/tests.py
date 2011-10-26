@@ -16,20 +16,24 @@ class ProjectTests(TestCase):
             build_instructions='echo "lol"',
         )
 
-    def _create_metabuild(self):
-        self.metabuild = MetaBuild.objects.create(
-            project=self.project,
-            matrix=json.dumps({'python': ['py25', 'py26', 'py27'],
-                               'django': ['1.2', '1.3', 'trunk']}),
-            revision='1',
-        )
+    def _create_metabuild(self, **kwargs):
+        defaults = {
+            'project': self.project,
+            'matrix': json.dumps({'python': ['py25', 'py26', 'py27'],
+                                  'django': ['1.2', '1.3', 'trunk']}),
+            'revision': '1',
+        }
+        defaults.update(kwargs)
+        self.metabuild = MetaBuild.objects.create(**defaults)
 
-    def _create_build(self):
-        self.build = self.metabuild.builds.create(
-            status='success',
-            values=json.dumps({'python': 'py27', 'django': 'trunk'}),
-            output='Build finished: SUCCESS',
-        )
+    def _create_build(self, **kwargs):
+        defaults = {
+            'status': 'success',
+            'values': json.dumps({'python': 'py27', 'django': 'trunk'}),
+            'output': 'Build finished: SUCCESS',
+        }
+        defaults.update(kwargs)
+        self.build = self.metabuild.builds.create(**defaults)
 
     def test_project_list(self):
         url = reverse('projects')
@@ -200,3 +204,29 @@ class ProjectTests(TestCase):
         response = self.client.post(url, {})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(MetaBuild.objects.count(), 1)
+
+    def test_project_builds(self):
+        """A list of builds for a project"""
+        self._create_project()
+        self._create_metabuild()
+        self._create_build()
+        self._create_build(status='failure')
+        self._create_metabuild()
+        self._create_build()
+        self._create_build()
+
+        url = reverse('project_builds', args=[self.project.slug])
+        response = self.client.get(url)
+        self.assertContains(response, "Builds for " + self.project.name)
+
+    def test_project_build(self):
+        """Detailed view of a metabuild"""
+        self._create_project()
+        self._create_metabuild()
+        self._create_build()
+        self._create_build()
+
+        url = reverse('project_build', args=[self.project.slug,
+                                             self.metabuild.pk])
+        response = self.client.get(url)
+        self.assertContains(response, 'success')

@@ -206,19 +206,7 @@ class Project(models.Model):
         """
         if not self.builds.exists():
             return _('no build yet')
-        if not hasattr(self, '_builds'):
-            self._builds = self.builds.all()[0].builds.all()
-        builds = self._builds
-        running = [build for build in builds if build.status == build.RUNNING]
-        if running:
-            return 'running'
-        failed = [build for build in builds if build.status == build.FAILURE]
-        if failed:
-            return 'failed'
-        success = [build for build in builds if build.status == build.SUCCESS]
-        if success:
-            return 'success'
-        return 'not running. not failed. not success. what is it?'
+        return self.builds.all()[0].build_status
 
     def build_progress(self):
         total = len(self._builds)
@@ -301,6 +289,26 @@ class MetaBuild(models.Model):
         Returns the build matrix, json-loaded.
         """
         return json.loads(self.matrix)
+
+    @property
+    def build_status(self):
+        builds = self.builds.all()
+        running = [build for build in builds if build.status == build.RUNNING]
+        if running:
+            return 'running'
+        failed = [build for build in builds if build.status == build.FAILURE]
+        if failed:
+            return 'failed'
+        success = [build for build in builds if build.status == build.SUCCESS]
+        if success:
+            return 'success'
+        return 'not running. not failed. not success. what is it?'
+
+    @property
+    def short_rev(self):
+        if len(self.revision) > 8:
+            return self.revision[:8]
+        return self.revision
 
 
 class Build(models.Model):

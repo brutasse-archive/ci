@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{% blocktrans %}Builds for {{ project }}{% endblocktrans %}{% endblock %}
+
+{% block content %}
+	<section class="build_status">{% url "project" project.slug as project_url %}
+		<h1>{% blocktrans %}Builds for <a href="{{ project_url }}">{{ project }}</a>{% endblocktrans %}</h1>
+
+		<ul>{% for build in object_list %}
+				<li>
+				<div class="name"><a href="{% url "project_build" project.slug build.pk %}">#{{ build.pk }}</a> <span class="date">{{ build.creation_date }}</span> <span class="revision">{{ build.short_rev }}</span></div>
+					<div class="status {{ build.build_status }}"><span>{{ build.build_status }}</span></div>
+				</li>
+			{% empty %}
+				<li>{% trans "This project hasn't been built yet." %}</li>
+			{% endfor %}</ul>
+	</section>
+{% endblock %}

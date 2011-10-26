@@ -33,6 +33,34 @@ class ProjectDetails(generic.DetailView):
 project = ProjectDetails.as_view()
 
 
+class ProjectMixin(object):
+    """
+    Mixin that injects the current project to the context.
+    Also filters the queryset to match the project.
+    """
+    def get_context_data(self, **kwargs):
+        ctx = super(ProjectMixin, self).get_context_data(**kwargs)
+        ctx.update({
+            'project': get_object_or_404(Project, slug=self.kwargs['slug']),
+        })
+        return ctx
+
+    def get_queryset(self):
+        return super(ProjectMixin, self).get_queryset().filter(
+            project__slug=self.kwargs['slug'],
+        )
+
+
+class ProjectBuilds(ProjectMixin, generic.ListView):
+    model = MetaBuild
+project_builds = ProjectBuilds.as_view()
+
+
+class ProjectBuild(ProjectMixin, generic.DetailView):
+    model = MetaBuild
+project_build = ProjectBuild.as_view()
+
+
 class DeleteBuild(generic.DeleteView):
     model = MetaBuild
 

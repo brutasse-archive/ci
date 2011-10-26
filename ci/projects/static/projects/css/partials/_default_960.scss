@@ -41,6 +41,25 @@ header {
 }
 
 .build_status {
+	@include columns(6);
+	@include omega;
+	margin-top: 2px;
+
+	h2 {
+		@include clearfix;
+
+		.title {
+			@include columns(4);
+			@include alpha;
+		}
+
+		.all {
+			@include columns(2);
+			@include omega;
+			text-align: right;
+		}
+	}
+
 	li {
 		@include clearfix;
 	}
@@ -113,10 +132,4 @@ form {
 .build_summary {
 	@include columns(6);
 	@include alpha;
-}
-
-.build_status {
-	@include columns(6);
-	@include omega;
-	margin-top: 2px;
 }
