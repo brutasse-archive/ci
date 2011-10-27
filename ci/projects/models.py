@@ -378,6 +378,8 @@ class Build(models.Model):
         Performs a checkout / clone in the build directory.
         """
         logger.info("Checking out %s" % self.metabuild.project.repo)
+        self.output += '[CI] Cloning...\n'
+        self.save()
         command = self.metabuild.project.local_checkout_command
         cmd = Command('cd %s && %s %s' % (
             os.path.join(settings.WORKSPACE, 'builds'),
@@ -395,6 +397,8 @@ class Build(models.Model):
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
             f.write(self.metabuild.build_instructions.replace('\r\n', '\n'))
         logger.info("Running build script")
+        self.output += '[CI] Running build script...\n'
+        self.save()
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
                       environ=env, stream_to=self.stream_to)
         self.check_response(cmd)
