@@ -290,7 +290,7 @@ strong {
 		@include badge;
 	}
 
-	.failure span {
+	.failure span, .failed span {
 		@include fail-badge;
 	}
 	.success span {
