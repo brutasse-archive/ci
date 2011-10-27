@@ -19,12 +19,10 @@ logger = logging.getLogger('ci')
 class Project(models.Model):
     GIT = 'git'
     HG = 'hg'
-    SVN = 'svn'
 
     REPO_TYPES = (
         (GIT, _('Git')),
         (HG, _('Mercurial')),
-        (SVN, _('SVN')),
     )
 
     name = models.CharField(_('Name'), max_length=255)
@@ -66,8 +64,7 @@ class Project(models.Model):
     @property
     def vcs_command(self):
         return {self.GIT: 'git clone %s',
-                self.HG: 'hg clone %s',
-                self.SVN: 'svn checkout %s'}[self.repo_type]
+                self.HG: 'hg clone %s'}[self.repo_type]
 
     @property
     def checkout_command(self):
@@ -92,8 +89,6 @@ class Project(models.Model):
                        'git --git-dir=.git reset --hard origin/master'),
             self.HG: ('hg pull && '
                       'hg update -C .'),
-            self.SVN: ('svn revert --recursive . && '
-                       'svn up --accept theirs-full'),
         }[self.repo_type]
 
     @property
@@ -181,11 +176,6 @@ class Project(models.Model):
         """
         if not os.path.exists(self.cache_dir):
             self.update_source()
-        if self.repo_type == self.SVN:
-            cmd = Command('cd %s && svn info' % self.cache_dir)
-            if not cmd.return_code == 0:
-                assert False, "svn info failed"
-            return cmd.out.split('\nRevision: ')[1].split()[0]
 
         if self.repo_type == self.GIT:
             cmd = Command('cd %s && git rev-parse HEAD' % self.cache_dir)
@@ -388,10 +378,7 @@ class Build(models.Model):
         Performs a checkout / clone in the build directory.
         """
         logger.info("Checking out %s" % self.metabuild.project.repo)
-        if self.metabuild.project.repo_type == Project.SVN:
-            command = self.metabuild.project.checkout_command
-        else:  # DVCS, we have a full local copy
-            command = self.metabuild.project.local_checkout_command
+        command = self.metabuild.project.local_checkout_command
         cmd = Command('cd %s && %s %s' % (
             os.path.join(settings.WORKSPACE, 'builds'),
             command,
