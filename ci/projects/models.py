@@ -61,6 +61,11 @@ class Project(models.Model):
     def get_absolute_url(self):
         return reverse('project', args=[self.slug])
 
+    def save(self, *args, **kwargs):
+        from .tasks import clone_on_creation
+        super(Project, self).save(*args, **kwargs)
+        clone_on_creation.delay(self.pk)
+
     @property
     def vcs_command(self):
         return {self.GIT: 'git clone %s',
