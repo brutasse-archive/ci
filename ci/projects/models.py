@@ -61,11 +61,6 @@ class Project(models.Model):
     def get_absolute_url(self):
         return reverse('project', args=[self.slug])
 
-    def save(self, *args, **kwargs):
-        from .tasks import clone_on_creation
-        super(Project, self).save(*args, **kwargs)
-        clone_on_creation.delay(self.pk)
-
     @property
     def vcs_command(self):
         return {self.GIT: 'git clone %s',
@@ -401,7 +396,7 @@ class Build(models.Model):
             f.write(self.metabuild.build_instructions.replace('\r\n', '\n'))
         logger.info("Running build script")
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
-                      environ=env)
+                      environ=env, stream_to=self.stream_to)
         self.check_response(cmd)
 
     def check_response(self, cmd):
@@ -411,8 +406,6 @@ class Build(models.Model):
         """
         if cmd.out:
             self.output += cmd.out
-        if cmd.err:
-            self.output += cmd.err
         if cmd.return_code != 0:
             msg = 'Error while running "%s": returned %s' % (
                 cmd.command, cmd.return_code,
@@ -434,3 +427,17 @@ class Build(models.Model):
         """
         from .tasks import execute_build  # avoid circular imports
         execute_build.delay(self.pk)
+
+    def stream_to(self, output):
+        """
+        Method passed to the command constructor, which appends the
+        ouput and saves it every second.
+        """
+        if not hasattr(self, 'last_save'):
+            self.last_save = datetime.datetime.now()
+
+        self.output += output
+        if (self.last_save + datetime.timedelta(seconds=1) <
+            datetime.datetime.now()):
+            self.save()
+            self.last_save = datetime.datetime.now()
