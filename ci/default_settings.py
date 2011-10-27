@@ -104,7 +104,7 @@ LOGGING = {
         'ci': {
             'handlers': ['console'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         },
     },
 }
