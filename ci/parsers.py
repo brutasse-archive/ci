@@ -20,12 +20,13 @@ class XunitParser(object):
             elif len(testcase) == 0:  # Success
                 status = 'success'
             attrs = testcase.attrib
-            attrs.update({
-                'status': status,
+            if not '\n' in text:
                 # XXX python unittest doesn't seem to output newlines,
                 # this reconstructs a somewhat readable ouput.
-                'text': text.replace('  ', '\n  ').replace('\n  \n  ',
-                                                           '\n    '),
+                text = text.replace('  ', '\n  ').replace('\n  \n  ', '\n    ')
+            attrs.update({
+                'status': status,
+                'text': text,
             })
             if 'name' in attrs:
                 self.testcases.append(attrs)
