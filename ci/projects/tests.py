@@ -4,10 +4,24 @@ import os
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
+from celery.decorators import task
+
+from . import tasks
 from .models import Project, Configuration, Value, MetaBuild
 
 
 class ProjectTests(TestCase):
+    def setUp(self):
+        # Disconnect the clone task to avoid implicit cloning during the tests
+        @task
+        def clone_on_creation(project_id):
+            pass
+        self._old_clone = tasks.clone_on_creation
+        tasks.clone_on_creation = clone_on_creation
+
+    def tearDown(self):
+        tasks.clone_on_creation = self._old_clone
+
     def _create_project(self):
         self.project = Project.objects.create(
             name='django-floppyforms',

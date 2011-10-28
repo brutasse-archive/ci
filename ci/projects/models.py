@@ -61,6 +61,13 @@ class Project(models.Model):
     def __unicode__(self):
         return u'%s' % self.name
 
+    def save(self, *args, **kwargs):
+        clone = self.pk is None
+        super(Project, self).save(*args, **kwargs)
+        if clone:
+            from .tasks import clone_on_creation
+            clone_on_creation.delay(self.pk)
+
     def get_absolute_url(self):
         return reverse('project', args=[self.slug])
 
