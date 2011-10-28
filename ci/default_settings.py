@@ -110,18 +110,13 @@ LOGGING = {
 }
 
 # Redis for celery
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-
-CELERY_RESULT_BACKEND = "redis"
-CELERY_REDIS_HOST = REDIS_HOST
-CELERY_REDIS_PORT = REDIS_PORT
-CELERY_REDIS_DB = 2
-
 BROKER_TRANSPORT = "redis"
-BROKER_HOST = REDIS_HOST
-BROKER_PORT = REDIS_PORT
-BROKER_VHOST = "3"
+BROKER_HOST = "localhost"
+BROKER_PORT = 6379
+BROKER_VHOST = "2"
+
+# Not consuming task results
+CELERY_IGNORE_RESULT = True
 
 import djcelery
 djcelery.setup_loader()
