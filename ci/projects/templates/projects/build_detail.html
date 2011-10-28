@@ -22,6 +22,37 @@
 		</div>
 
 		<div class="output">
+			{% if object.xunit_xml_report %}
+				<h6>{% trans "Test results" %}</h6>
+				{% with object.xunit.summary as summary %}
+					<p>Ran {{ summary.tests }} test{{ summary.tests|pluralize }}{% if summary.time %} in {{ summary.time }}s{% endif %}.</p>
+					<p>{{ summary.failures }} failure{{ summary.failures|pluralize }},
+					{{ summary.errors }} error{{ summary.errors|pluralize }}{% if summary.skip %}, 
+					{{ summary.skip }} skipped{% endif %}.</p>
+				{% endwith %}
+
+				{% with object.xunit.testcases as testcases %}
+					<ul class="test_results">
+						<li>
+							<div class="name"><strong>{% trans "Test name" %}</strong></div>
+							<div class="status left"><strong>{% trans "Status" %}</strong></div>
+							<div class="time"><strong>{% trans "Time" %}</strong></div>
+						</li>
+						{% for testcase in testcases %}
+							<li>
+								<div class="name" title="{{ testcase.desc }}">{{ testcase.classname }}.{{ testcase.name }}</div>
+								<div class="status left {{ testcase.status }}"><span>{{ testcase.status }}</span></div>
+								<div class="time">{{ testcase.time }}s</div>
+								{% if testcase.text %}
+									<div class="output">
+										<pre>{{ testcase.text }}</pre>
+									</div>
+								{% endif %}
+							</li>
+						{% endfor %}
+					</ul>
+				{% endwith %}
+			{% endif %}
 			<h6>{% trans "Build output" %}</h6>
 			<pre>{{ object.output }}</pre>
 		</div>

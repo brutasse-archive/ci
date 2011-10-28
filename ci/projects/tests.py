@@ -1,4 +1,5 @@
 import anyjson as json
+import os
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
@@ -230,3 +231,24 @@ class ProjectTests(TestCase):
                                              self.metabuild.pk])
         response = self.client.get(url)
         self.assertContains(response, 'success')
+
+    def test_xunit_report(self):
+        """XUnit XML test results"""
+        self._create_project()
+        self._create_metabuild()
+        self._create_build()
+
+        # Attach an XML report
+        with open(os.path.join(
+            os.path.dirname(__file__),
+            os.pardir, 'test_data', 'xunit.xml')) as f:
+            self.build.xunit_xml_report = f.read()
+        self.build.save()
+
+        url = reverse('build', args=[self.build.pk])
+        response = self.client.get(url)
+        self.assertContains(response, 'Test results')
+        self.assertContains(response, 'Ran 79 tests in 37.225s')
+        self.assertContains(response, '1 failure')
+        self.assertContains(response, '0 errors')
+        self.assertContains(response, 'AssertionError: False is not True')

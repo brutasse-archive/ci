@@ -101,6 +101,23 @@ header {
 	}
 }
 
+.test_results {
+	.name {
+		@include columns(7);
+		@include alpha;
+	}
+	.status {
+		@include columns(1);
+	}
+	.time {
+		@include columns(1);
+		@include omega;
+	}
+	.output {
+		@include full(9);
+	}
+}
+
 form {
 	.field, .submit {
 		@include clearfix;

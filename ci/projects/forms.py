@@ -9,7 +9,7 @@ from .models import Project
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        exclude = ['slug', 'keep_build_data', 'sequential']
+        fields = ['name', 'repo', 'repo_type', 'build_instructions']
         widgets = {
             'name': forms.TextInput,
             'repo': forms.TextInput,
@@ -21,7 +21,8 @@ class ProjectForm(forms.ModelForm):
 class ProjectBuildForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['build_instructions', 'sequential', 'keep_build_data']
+        fields = ['build_instructions', 'sequential', 'keep_build_data',
+                  'xunit_xml_report']
         widgets = {
             'build_instructions': forms.Textarea,
             'sequential': forms.CheckboxInput,

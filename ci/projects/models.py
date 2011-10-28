@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from ..parsers import XunitParser
 from .exceptions import BuildException
 from .utils import Command
 
@@ -51,6 +52,8 @@ class Project(models.Model):
                     'debugging builds but potentially eats a lot of disk '
                     'space.'),
     )
+    xunit_xml_report = models.CharField(_('XML test report'), blank=True,
+                                        max_length=1023)
 
     class Meta:
         ordering = ('name',)
@@ -131,6 +134,7 @@ class Project(models.Model):
             revision=self.latest_revision,
             matrix=json.dumps(matrix),
             build_instructions=self.build_instructions,
+            xunit_xml_report=self.xunit_xml_report,
         )
 
         if configs:
@@ -259,6 +263,8 @@ class MetaBuild(models.Model):
     # has everything it needs.
     matrix = models.TextField(_('Build matrix'), blank=True)
     build_instructions = models.TextField(_('Build instructions'))
+    xunit_xml_report = models.CharField(_('XML test report'), blank=True,
+                                        max_length=1023)
 
     def __unicode__(self):
         return u'Build #%s of %s' % (self.pk, self.project.name)
@@ -324,6 +330,7 @@ class Build(models.Model):
     end_date = models.DateTimeField(_('Date ended'), null=True)
     values = models.TextField(_('Values'), blank=True)
     output = models.TextField(_('Build output'), blank=True)
+    xunit_xml_report = models.TextField(_('XML test report'), blank=True)
 
     def __unicode__(self):
         return u'Build #%s (%s)' % (self.pk,
@@ -342,6 +349,15 @@ class Build(models.Model):
     @property
     def values_data(self):
         return json.loads(self.values)
+
+    @property
+    def xunit(self):
+        """
+        Parsed XML output.
+        """
+        if not hasattr(self, '_xunit'):
+            self._xunit = XunitParser(self.xunit_xml_report)
+        return self._xunit
 
     def delete_build_data(self):
         if os.path.exists(self.build_path):
@@ -366,6 +382,7 @@ class Build(models.Model):
 
         self.checkout_source()
         self.run()
+        self.fetch_reports()
         logger.info("%s finished: SUCCESS" % self.__unicode__())
         self.end_date = datetime.datetime.now()
         self.status = self.SUCCESS
@@ -423,6 +440,18 @@ class Build(models.Model):
                 self.delete_build_data()
             raise BuildException(msg, cmd)
         logger.info("Command completed successfully: %s" % cmd.command)
+        self.save()
+
+    def fetch_reports(self):
+        """
+        Stores the XML reports.
+        """
+        if not self.metabuild.xunit_xml_report:
+            return
+
+        with open(os.path.join(self.build_path,
+                               self.metabuild.xunit_xml_report)) as xml:
+            self.xunit_xml_report = xml.read()
         self.save()
 
     def queue(self):

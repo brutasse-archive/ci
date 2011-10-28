@@ -279,9 +279,12 @@ strong {
 	margin-bottom: 10px;
 }
 
-.build_status, .build {
+.build_status, .build, .test_results {
 	.status {
 		text-align: right;
+		&.left {
+			text-align: left;
+		}
 	}
 
 	.status span {
@@ -298,6 +301,33 @@ strong {
 	}
 	.running span {
 		@include notice-badge;
+	}
+}
+
+.test_results {
+	&, li {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		@include clearfix;
+	}
+
+	li {
+		font-size: 0.8em;
+	}
+
+	.status span {
+		padding: 3px;
+	}
+
+	.status strong {
+		display: inline-block;
+		padding: 5px 0;
+	}
+
+	.name, .time {
+		padding: 5px 0;
+		line-height: 1.2em;
 	}
 }
 
