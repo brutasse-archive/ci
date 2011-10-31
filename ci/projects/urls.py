@@ -20,6 +20,9 @@ urlpatterns = patterns('',
     url(r'^project/(?P<slug>[\w_-]+)/builds/(?P<pk>\d+)/delete/$',
         views.delete_build, name='delete_build'),
 
+    url(r'^project/(?P<slug>[\w_-]+)/builds/(?P<pk>\d+)/jobs/(?P<job_id>\d+)/$',
+        views.job, name='project_job'),
+
     url(r'^project/(?P<slug>[\w_-]+)/builds/(?P<pk>\d+)/$',
         views.project_build, name='project_build'),
 
@@ -27,6 +30,4 @@ urlpatterns = patterns('',
         views.project_builds, name='project_builds'),
 
     url(r'^project/(?P<slug>[\w_-]+)/$', views.project, name='project'),
-
-    url(r'^build/(?P<pk>\d+)/$', views.job, name='build'),
 )

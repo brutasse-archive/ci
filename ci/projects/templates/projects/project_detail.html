@@ -35,7 +35,7 @@
 		<ul>
 			{% for build in last_build.jobs.all %}
 				<li>
-					<div class="name"><a href="{% url "build" build.pk %}">#{{ build.pk }}</a>
+					<div class="name"><a href="{% url "project_job" object.slug last_build.pk build.pk %}">#{{ build.pk }}</a>
 						<span>{% for key, val in build.values_data.items %}<strong>{{ key}}:</strong> {{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
 					</div>
 					<div class="status {{ build.status }}"><span>{{ build.status }}</span></div>

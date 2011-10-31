@@ -175,7 +175,8 @@ class ProjectTests(TestCase):
 
         url = reverse('project', args=[self.project.slug])
         response = self.client.get(url)
-        build_url = reverse('build', args=[job.pk])
+        build_url = reverse('project_job', args=[self.project.slug,
+                                                 self.build.pk, job.pk])
         self.assertContains(response, build_url)
         self.assertContains(response, 'Build status: running')
 
@@ -185,7 +186,8 @@ class ProjectTests(TestCase):
         self._create_build()
         self._create_job()
 
-        url = reverse('build', args=[self.job.pk])
+        url = reverse('project_job', args=[self.project.slug, self.build.pk,
+                                           self.job.pk])
         response = self.client.get(url)
         self.assertContains(response, 'success')
 
@@ -259,7 +261,8 @@ class ProjectTests(TestCase):
             self.job.xunit_xml_report = f.read()
         self.job.save()
 
-        url = reverse('build', args=[self.job.pk])
+        url = reverse('project_job', args=[self.project.slug, self.build.pk,
+                                           self.job.pk])
         response = self.client.get(url)
         self.assertContains(response, 'Test results')
         self.assertContains(response, 'Ran 79 tests in 37.225s')

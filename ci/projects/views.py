@@ -79,7 +79,13 @@ delete_build = DeleteBuild.as_view()
 
 
 class BuildDetails(generic.DetailView):
-    model = Job
+    def get_object(self):
+        return get_object_or_404(
+            Job,
+            build__project__slug=self.kwargs['slug'],
+            build__pk=self.kwargs['pk'],
+            pk=self.kwargs['job_id'],
+        )
 job = BuildDetails.as_view()
 
 

@@ -22,12 +22,12 @@
 		</h2>
 
 		<ul>
-			{% for build in object.builds.all %}
+			{% for job in object.jobs.all %}
 				<li>
-					<div class="name"><a href="{% url "build" build.pk %}">#{{ build.pk }}</a>
-						<span>{% for key, val in build.values_data.items %}<strong>{{ key}}:</strong> {{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+					<div class="name"><a href="{% url "project_job" project.slug object.pk job.pk %}">#{{ job.pk }}</a>
+						<span>{% for key, val in job.values_data.items %}<strong>{{ key}}:</strong> {{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
 					</div>
-					<div class="status {{ build.status }}"><span>{{ build.status }}</span></div>
+					<div class="status {{ job.status }}"><span>{{ job.status }}</span></div>
 				</li>
 			{% endfor %}
 		</ul>
