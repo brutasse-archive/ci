@@ -1,26 +1,26 @@
 from celery.decorators import task
 
 from .exceptions import BuildException
-from .models import Build, MetaBuild, Project
+from .models import Job, Build, Project
 
 
 @task(ignore_result=True)
-def execute_build(build_id):
+def execute_job(build_id):
     try:
-        Build.objects.get(pk=build_id).execute()
+        Job.objects.get(pk=build_id).execute()
     except BuildException:
         pass  # It's being reported, task is complete.
 
 
 @task(ignore_result=True)
-def execute_metabuild(metabuild_id):
+def execute_build(build_id):
     """
     Sequential build.
     """
-    meta = MetaBuild.objects.get(pk=metabuild_id)
-    for build in meta.builds.all():
+    build = Build.objects.get(pk=build_id)
+    for job in build.jobs.all():
         try:
-            build.execute()
+            job.execute()
         except BuildException:
             pass
 

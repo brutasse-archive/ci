@@ -28,5 +28,5 @@ urlpatterns = patterns('',
 
     url(r'^project/(?P<slug>[\w_-]+)/$', views.project, name='project'),
 
-    url(r'^build/(?P<pk>\d+)/$', views.build, name='build'),
+    url(r'^build/(?P<pk>\d+)/$', views.job, name='build'),
 )

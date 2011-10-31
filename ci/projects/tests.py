@@ -7,7 +7,7 @@ from django.test import TestCase
 from celery.decorators import task
 
 from . import tasks
-from .models import Project, Configuration, Value, MetaBuild
+from .models import Project, Configuration, Value, Build
 
 
 class ProjectTests(TestCase):
@@ -31,7 +31,7 @@ class ProjectTests(TestCase):
             build_instructions='echo "lol"',
         )
 
-    def _create_metabuild(self, **kwargs):
+    def _create_build(self, **kwargs):
         defaults = {
             'project': self.project,
             'matrix': json.dumps({'python': ['py25', 'py26', 'py27'],
@@ -39,16 +39,16 @@ class ProjectTests(TestCase):
             'revision': '1',
         }
         defaults.update(kwargs)
-        self.metabuild = MetaBuild.objects.create(**defaults)
+        self.build = Build.objects.create(**defaults)
 
-    def _create_build(self, **kwargs):
+    def _create_job(self, **kwargs):
         defaults = {
             'status': 'success',
             'values': json.dumps({'python': 'py27', 'django': 'trunk'}),
             'output': 'Build finished: SUCCESS',
         }
         defaults.update(kwargs)
-        self.build = self.metabuild.builds.create(**defaults)
+        self.job = self.build.jobs.create(**defaults)
 
     def test_project_list(self):
         url = reverse('projects')
@@ -166,100 +166,100 @@ class ProjectTests(TestCase):
     def test_build_axis(self):
         """Displaying configuration axes"""
         self._create_project()
-        self._create_metabuild()
+        self._create_build()
 
-        build = self.metabuild.builds.create(
+        job = self.build.jobs.create(
             status='running',
             values=json.dumps({'python': 'py25', 'django': '1.2'}),
         )
 
         url = reverse('project', args=[self.project.slug])
         response = self.client.get(url)
-        build_url = reverse('build', args=[build.pk])
+        build_url = reverse('build', args=[job.pk])
         self.assertContains(response, build_url)
         self.assertContains(response, 'Build status: running')
 
     def test_build_detail(self):
         """Detailed page for a single build"""
         self._create_project()
-        self._create_metabuild()
         self._create_build()
+        self._create_job()
 
-        url = reverse('build', args=[self.build.pk])
+        url = reverse('build', args=[self.job.pk])
         response = self.client.get(url)
         self.assertContains(response, 'success')
 
     def test_delete_build(self):
         """Delete a build"""
         self._create_project()
-        self._create_metabuild()
         self._create_build()
+        self._create_job()
 
         url = reverse('delete_build', args=[self.project.slug,
-                                            self.metabuild.pk])
+                                            self.build.pk])
         response = self.client.get(url)
         self.assertContains(response, 'Delete')
-        self.assertEqual(MetaBuild.objects.count(), 1)
+        self.assertEqual(Build.objects.count(), 1)
 
         response = self.client.post(url, {})
         self.assertRedirects(response, reverse('project',
                                                args=[self.project.slug]))
-        self.assertEqual(MetaBuild.objects.count(), 0)
+        self.assertEqual(Build.objects.count(), 0)
 
         # Disallow deleting a build that's not success or failure
-        self._create_metabuild()
         self._create_build()
-        self.build.status = 'running'
-        self.build.save()
+        self._create_job()
+        self.job.status = 'running'
+        self.job.save()
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(MetaBuild.objects.count(), 1)
+        self.assertEqual(Build.objects.count(), 1)
 
         response = self.client.post(url, {})
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(MetaBuild.objects.count(), 1)
+        self.assertEqual(Build.objects.count(), 1)
 
     def test_project_builds(self):
         """A list of builds for a project"""
         self._create_project()
-        self._create_metabuild()
         self._create_build()
-        self._create_build(status='failure')
-        self._create_metabuild()
+        self._create_job()
+        self._create_job(status='failure')
         self._create_build()
-        self._create_build()
+        self._create_job()
+        self._create_job()
 
         url = reverse('project_builds', args=[self.project.slug])
         response = self.client.get(url)
         self.assertContains(response, "Builds for " + self.project.name)
 
     def test_project_build(self):
-        """Detailed view of a metabuild"""
+        """Detailed view of a build"""
         self._create_project()
-        self._create_metabuild()
         self._create_build()
-        self._create_build()
+        self._create_job()
+        self._create_job()
 
         url = reverse('project_build', args=[self.project.slug,
-                                             self.metabuild.pk])
+                                             self.build.pk])
         response = self.client.get(url)
         self.assertContains(response, 'success')
 
     def test_xunit_report(self):
         """XUnit XML test results"""
         self._create_project()
-        self._create_metabuild()
         self._create_build()
+        self._create_job()
 
         # Attach an XML report
         with open(os.path.join(
             os.path.dirname(__file__),
             os.pardir, 'test_data', 'xunit.xml')) as f:
-            self.build.xunit_xml_report = f.read()
-        self.build.save()
+            self.job.xunit_xml_report = f.read()
+        self.job.save()
 
-        url = reverse('build', args=[self.build.pk])
+        url = reverse('build', args=[self.job.pk])
         response = self.client.get(url)
         self.assertContains(response, 'Test results')
         self.assertContains(response, 'Ran 79 tests in 37.225s')

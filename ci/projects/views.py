@@ -9,7 +9,7 @@ from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 
 from .forms import ProjectForm, ProjectBuildForm, ConfigurationFormSet
-from .models import Project, Build, MetaBuild
+from .models import Project, Job, Build
 
 
 class Projects(generic.ListView):
@@ -52,17 +52,17 @@ class ProjectMixin(object):
 
 
 class ProjectBuilds(ProjectMixin, generic.ListView):
-    model = MetaBuild
+    model = Build
 project_builds = ProjectBuilds.as_view()
 
 
 class ProjectBuild(ProjectMixin, generic.DetailView):
-    model = MetaBuild
+    model = Build
 project_build = ProjectBuild.as_view()
 
 
 class DeleteBuild(generic.DeleteView):
-    model = MetaBuild
+    model = Build
 
     def get_object(self):
         object_ = super(DeleteBuild, self).get_object()
@@ -79,8 +79,8 @@ delete_build = DeleteBuild.as_view()
 
 
 class BuildDetails(generic.DetailView):
-    model = Build
-build = BuildDetails.as_view()
+    model = Job
+job = BuildDetails.as_view()
 
 
 class AddProject(generic.CreateView):
@@ -186,9 +186,9 @@ def project_trigger_build(request, slug):
     """BUILD BUTTON"""
     if request.method == 'POST':
         project = get_object_or_404(Project, slug=slug)
-        if not Build.objects.filter(
-            metabuild__project=project,
-            status__in=[Build.RUNNING, Build.PENDING],
+        if not Job.objects.filter(
+            build__project=project,
+            status__in=[Job.RUNNING, Job.PENDING],
         ).exists():
             triggered = project.build()
             if triggered:

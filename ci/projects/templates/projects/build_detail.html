@@ -1,60 +1,38 @@
 {% extends "base.html" %}
 
+{% block title %}{% blocktrans with object.pk as build_id %}Build #{{ build_id }} of {{ project }}{% endblocktrans %}{% endblock %}
+
 {% block content %}
-	<section class="build">
-		<h1>
-			<div>{% blocktrans with object.pk as build_id %}Build #{{ build_id }}{% endblocktrans %}<span></div>
-			<div class="status {{ object.status }}"><span>{{ object.status }}</span></div>
-		</h1>
-		<div class="meta">
-			{% with object.metabuild as meta %}
-				{% url "project" meta.project.slug as project_url %}
-				{% url "project_build" meta.project.slug meta.pk as build_url %}
-				{% blocktrans with meta.pk as metabuild_id and meta.project.name as name %}from build <a href="{{ build_url }}">#{{ metabuild_id }}</a> of <a href="{{ project_url }}">{{ name }}</a>{% endblocktrans %}
-			{% endwith %}
-		</div>
+	<section class="build_summary">{% url "project" project.slug as project_url %}
+		<h1>{% blocktrans with object.pk as build_id %}Build #{{ build_id }} of <a href="{{ project_url }}">{{ project }}</a>{% endblocktrans %}</h1>
+		<p class="meta">{{ object.creation_date }} - {{ object.short_rev }}</p>
+		<h6>{% trans "Build instructions" %}</h6>
+		<pre>{{ object.build_instructions }}</pre>
 
-		<div class="summary">
-			<h6>{% trans "Configuration values" %}</h6>
-			<ul>{% for key, value in object.values_data.items %}
-					<li><strong>{{ key }}</strong>: {{ value }}</li>
-			{% endfor %}</li>
-		</div>
+		<h6>{% trans "Build axes" %}</h6>
+		<ul>{% for key, values in object.matrix_data.items %}
+				<li><strong>{{ key }}</strong>: {% for value in values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+		{% endfor %}</ul>
+	</section>
 
-		<div class="output">
-			{% if object.xunit_xml_report %}
-				<h6>{% trans "Test results" %}</h6>
-				{% with object.xunit.summary as summary %}
-					<p>Ran {{ summary.tests }} test{{ summary.tests|pluralize }}{% if summary.time %} in {{ summary.time }}s{% endif %}.</p>
-					<p>{{ summary.failures }} failure{{ summary.failures|pluralize }},
-					{{ summary.errors }} error{{ summary.errors|pluralize }}{% if summary.skip %}, 
-					{{ summary.skip }} skipped{% endif %}.</p>
-				{% endwith %}
+	<section class="build_status">
+		<h2>
+			<div class="title">{% trans "Build status:" %} {{ object.build_status }}</div>
+			<div class="all"><a href="{% url "project_builds" project.slug %}">{% trans "all builds" %}</a></div>
+		</h2>
 
-				{% with object.xunit.testcases as testcases %}
-					<ul class="test_results">
-						<li>
-							<div class="name"><strong>{% trans "Test name" %}</strong></div>
-							<div class="status left"><strong>{% trans "Status" %}</strong></div>
-							<div class="time"><strong>{% trans "Time" %}</strong></div>
-						</li>
-						{% for testcase in testcases %}
-							<li>
-								<div class="name" title="{{ testcase.desc }}">{{ testcase.classname }}.{{ testcase.name }}</div>
-								<div class="status left {{ testcase.status }}"><span>{{ testcase.status }}</span></div>
-								<div class="time">{{ testcase.time }}s</div>
-								{% if testcase.text %}
-									<div class="output">
-										<pre>{{ testcase.text }}</pre>
-									</div>
-								{% endif %}
-							</li>
-						{% endfor %}
-					</ul>
-				{% endwith %}
-			{% endif %}
-			<h6>{% trans "Build output" %}</h6>
-			<pre>{{ object.output }}</pre>
-		</div>
+		<ul>
+			{% for build in object.builds.all %}
+				<li>
+					<div class="name"><a href="{% url "build" build.pk %}">#{{ build.pk }}</a>
+						<span>{% for key, val in build.values_data.items %}<strong>{{ key}}:</strong> {{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+					</div>
+					<div class="status {{ build.status }}"><span>{{ build.status }}</span></div>
+				</li>
+			{% endfor %}
+		</ul>
+		{% if object.build_status == "failure" or object.build_status = "success" %}
+			<p class="delete"><a href="{% url "delete_build" object.project.slug object.pk %}">{% trans "Delete build" %}</a></p>
+		{% endif %}
 	</section>
 {% endblock %}

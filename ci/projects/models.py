@@ -136,7 +136,7 @@ class Project(models.Model):
         else:
             matrix = {}
 
-        meta = MetaBuild.objects.create(
+        build = Build.objects.create(
             project=self,
             revision=self.latest_revision,
             matrix=json.dumps(matrix),
@@ -146,19 +146,19 @@ class Project(models.Model):
 
         if configs:
             for values in items:
-                build = Build.objects.create(
-                    metabuild=meta,
+                job = Job.objects.create(
+                    build=build,
                     values=json.dumps({v.key.key: v.value for v in values}),
                 )
                 if not self.sequential:
-                    build.queue()
+                    job.queue()
             if self.sequential:
-                meta.queue()
+                build.queue()
         else:
-            build = Build.objects.create(
-                metabuild=meta,
+            job = Job.objects.create(
+                build=build,
             )
-            build.queue()
+            job.queue()
         return True
 
     def update_source(self):
@@ -210,7 +210,7 @@ class Project(models.Model):
         return self.builds.all()[0].build_status
 
     def build_progress(self):
-        builds = self.builds.all()[0].builds.all()
+        builds = self.builds.all()[0].jobs.all()
         total = len(builds)
         done = len([b for b in builds if b.status in (b.SUCCESS, b.FAILURE)])
         return '%s/%s' % (done, total)
@@ -255,7 +255,7 @@ class Value(models.Model):
         unique_together = ('key', 'value')
 
 
-class MetaBuild(models.Model):
+class Build(models.Model):
     """
     Stores the metadata for a build axis / matrix
     """
@@ -266,7 +266,7 @@ class MetaBuild(models.Model):
                                          default=datetime.datetime.now)
 
     # These fields are serialized from the project. Lets users safely alter
-    # config values when a build has already been trigerred: the metabuild
+    # config values when a build has already been trigerred: the build
     # has everything it needs.
     matrix = models.TextField(_('Build matrix'), blank=True)
     build_instructions = models.TextField(_('Build instructions'))
@@ -283,8 +283,8 @@ class MetaBuild(models.Model):
         """
         Trigger a sequential build.
         """
-        from .tasks import execute_metabuild
-        execute_metabuild.delay(self.pk)
+        from .tasks import execute_build
+        execute_build.delay(self.pk)
 
     @property
     def matrix_data(self):
@@ -295,7 +295,7 @@ class MetaBuild(models.Model):
 
     @property
     def build_status(self):
-        builds = self.builds.all()
+        builds = self.jobs.all()
         running = [build for build in builds if build.status == build.RUNNING]
         if running:
             return 'running'
@@ -314,7 +314,7 @@ class MetaBuild(models.Model):
         return self.revision
 
 
-class Build(models.Model):
+class Job(models.Model):
     SUCCESS = 'success'
     FAILURE = 'failure'
     RUNNING = 'running'
@@ -327,8 +327,8 @@ class Build(models.Model):
         (PENDING, _('Pending')),
     )
 
-    metabuild = models.ForeignKey(MetaBuild, verbose_name=_('Meta build'),
-                                  related_name='builds')
+    build = models.ForeignKey(Build, verbose_name=_('Build'),
+                              related_name='jobs')
     status = models.CharField(_('Status'), max_length=10,
                               choices=STATUSES, default=PENDING)
     creation_date = models.DateTimeField(_('Date created'),
@@ -393,7 +393,7 @@ class Build(models.Model):
         logger.info("%s finished: SUCCESS" % self.__unicode__())
         self.end_date = datetime.datetime.now()
         self.status = self.SUCCESS
-        if not self.metabuild.project.keep_build_data:
+        if not self.build.project.keep_build_data:
             self.delete_build_data()
         self.save()
 
@@ -401,10 +401,10 @@ class Build(models.Model):
         """
         Performs a checkout / clone in the build directory.
         """
-        logger.info("Checking out %s" % self.metabuild.project.repo)
+        logger.info("Checking out %s" % self.build.project.repo)
         self.output += '[CI] Cloning...\n'
         self.save()
-        command = self.metabuild.project.local_checkout_command
+        command = self.build.project.local_checkout_command
         cmd = Command('cd %s && %s %s' % (
             os.path.join(settings.WORKSPACE, 'builds'),
             command,
@@ -419,7 +419,7 @@ class Build(models.Model):
         logger.info("Generating build script")
         env = json.loads(self.values) if self.values else {}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
-            f.write(self.metabuild.build_instructions.replace('\r\n', '\n'))
+            f.write(self.build.build_instructions.replace('\r\n', '\n'))
         logger.info("Running build script")
         self.output += '[CI] Running build script...\n'
         self.save()
@@ -443,7 +443,7 @@ class Build(models.Model):
             self.end_date = datetime.datetime.now()
             logger.info("%s failed: %s" % (self.__unicode__(), msg))
             self.save()
-            if not self.metabuild.project.keep_build_data:
+            if not self.build.project.keep_build_data:
                 self.delete_build_data()
             raise BuildException(msg, cmd)
         logger.info("Command completed successfully: %s" % cmd.command)
@@ -453,11 +453,11 @@ class Build(models.Model):
         """
         Stores the XML reports.
         """
-        if not self.metabuild.xunit_xml_report:
+        if not self.build.xunit_xml_report:
             return
 
         with open(os.path.join(self.build_path,
-                               self.metabuild.xunit_xml_report)) as xml:
+                               self.build.xunit_xml_report)) as xml:
             self.xunit_xml_report = xml.read()
         self.save()
 
@@ -465,8 +465,8 @@ class Build(models.Model):
         """
         Fires a celery task that runs the build.
         """
-        from .tasks import execute_build  # avoid circular imports
-        execute_build.delay(self.pk)
+        from .tasks import execute_job  # avoid circular imports
+        execute_job.delay(self.pk)
 
     def stream_to(self, output):
         """

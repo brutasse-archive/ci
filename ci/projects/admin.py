@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Project, Configuration, Value, MetaBuild, Build
+from .models import Project, Configuration, Value, Build, Job
 
 
 class ConfigurationInline(admin.TabularInline):
@@ -12,8 +12,8 @@ class ValueInline(admin.TabularInline):
     model = Value
 
 
-class BuildInline(admin.TabularInline):
-    model = Build
+class JobInline(admin.TabularInline):
+    model = Job
     extra = 0
 
 
@@ -26,17 +26,17 @@ class ConfigurationAdmin(admin.ModelAdmin):
     inlines = [ValueInline]
 
 
-class BuildAdmin(admin.ModelAdmin):
+class JobAdmin(admin.ModelAdmin):
     list_display = ('__unicode__', 'status')
     list_filter = ('status',)
 
 
-class MetaBuildAdmin(admin.ModelAdmin):
-    inlines = [BuildInline]
+class BuildAdmin(admin.ModelAdmin):
+    inlines = [JobInline]
     list_display = ('__unicode__', 'revision', 'creation_date')
 
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)
+admin.site.register(Job, JobAdmin)
 admin.site.register(Build, BuildAdmin)
-admin.site.register(MetaBuild, MetaBuildAdmin)
