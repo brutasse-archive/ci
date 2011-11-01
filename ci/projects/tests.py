@@ -1,13 +1,16 @@
 import anyjson as json
 import os
+import shutil
+import tarfile
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from celery.decorators import task
 
 from . import tasks
-from .models import Project, Configuration, Value, Build
+from .models import Project, Configuration, Value, Build, Job
 
 
 class ProjectTests(TestCase):
@@ -269,3 +272,65 @@ class ProjectTests(TestCase):
         self.assertContains(response, '1 failure')
         self.assertContains(response, '0 errors')
         self.assertContains(response, 'AssertionError: False is not True')
+
+
+class GitBuildTest(TestCase):
+    """
+    Tests for actual build execution, with a git repository.
+    """
+    git_name = 'gitrepo'
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                            os.pardir, 'test_data'))
+
+    def setUp(self):
+        self._clean_data()
+        # Extract local git repo archive
+        repo = tarfile.open(os.path.join(self.data_dir,
+                                         'gitrepo.tar.bz2'), 'r:bz2')
+        repo.extractall(path=self.data_dir)
+
+    def tearDown(self):
+        self._clean_data()
+
+    def _clean_data(self):
+        git_path = os.path.join(settings.WORKSPACE, 'repos')
+        git_repo = os.path.join(self.data_dir, 'gitrepo')
+        for directory in (git_path, git_repo):
+            if os.path.exists(directory):
+                shutil.rmtree(directory)
+
+    def _create_project(self):
+        self.project = Project.objects.create(
+            name=self.git_name,
+            slug=self.git_name,
+            repo=os.path.abspath(os.path.join(self.data_dir, self.git_name)),
+            build_instructions='echo 1',
+        )
+
+    def test_clone_project(self):
+        """Cloning a project after its creation"""
+        checkout_path = os.path.join(settings.WORKSPACE, 'repos',
+                                     self.git_name)
+        self.assertFalse(os.path.exists(checkout_path))
+        self._create_project()
+        self.assertTrue(os.path.exists(checkout_path))
+
+    def test_build_project(self):
+        """Building a project"""
+        self._create_project()
+        self.assertEqual(Build.objects.count(), 0)
+
+        # Trigger a build
+        self.assertTrue(self.project.build())
+        self.assertEqual(Build.objects.count(), 1)
+        self.assertEqual(Job.objects.count(), 1)
+
+        # Already built -- nothing happens
+        self.assertFalse(self.project.build())
+        self.assertEqual(Build.objects.count(), 1)
+
+    def test_revision(self):
+        """Fetching the latest revision from the VCS"""
+        self._create_project()
+        self.assertEqual(Project.objects.get().latest_revision,
+                         'ee9001ef213388da653486a8f59a07f4aa4cfca6')
