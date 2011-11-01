@@ -355,7 +355,9 @@ class Job(models.Model):
 
     @property
     def values_data(self):
-        return json.loads(self.values)
+        if self.values:
+            return json.loads(self.values)
+        return {}
 
     @property
     def xunit(self):

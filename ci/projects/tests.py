@@ -332,5 +332,10 @@ class GitBuildTest(TestCase):
     def test_revision(self):
         """Fetching the latest revision from the VCS"""
         self._create_project()
-        self.assertEqual(Project.objects.get().latest_revision,
+        self.assertEqual(self.project.latest_revision,
                          'ee9001ef213388da653486a8f59a07f4aa4cfca6')
+
+    def test_build(self):
+        self._create_project()
+        self.project.build()
+        self.assertEqual(self.project.build_status, 'success')

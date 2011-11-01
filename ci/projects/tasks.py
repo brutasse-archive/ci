@@ -5,9 +5,9 @@ from .models import Job, Build, Project
 
 
 @task(ignore_result=True)
-def execute_job(build_id):
+def execute_job(job_id):
     try:
-        Job.objects.get(pk=build_id).execute()
+        Job.objects.get(pk=job_id).execute()
     except BuildException:
         pass  # It's being reported, task is complete.
 
