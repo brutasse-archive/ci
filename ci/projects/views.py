@@ -66,7 +66,7 @@ class DeleteBuild(generic.DeleteView):
 
     def get_object(self):
         object_ = super(DeleteBuild, self).get_object()
-        if object_.project.build_status not in ('failure', 'success'):
+        if object_.project.build_status not in ('failed', 'success'):
             # Project is being built, don't delete
             raise Http404
         return object_
