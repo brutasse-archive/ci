@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from .. import vcs
 from ..parsers import XunitParser
 from .exceptions import BuildException
 from .utils import Command
@@ -71,35 +72,11 @@ class Project(models.Model):
     def get_absolute_url(self):
         return reverse('project', args=[self.slug])
 
-    @property
-    def vcs_command(self):
-        return {self.GIT: 'git clone %s',
-                self.HG: 'hg clone %s'}[self.repo_type]
-
-    @property
-    def checkout_command(self):
-        return self.vcs_command % self.repo
-
-    @property
-    def local_checkout_command(self):
-        """
-        For VCS that supports it, clone from the local copy instead
-        of from the network.
-        """
-        return self.vcs_command % self.cache_dir
-
-    # Update commands courtesy of Eric Holscher,
-    # http://ericholscher.com/blog/2010/nov/15/correct-commands-check-out-
-    # and-update-vcs-repos/
-
-    @property
-    def update_command(self):
+    def vcs(self):
         return {
-            self.GIT: ('git --git-dir=.git fetch && '
-                       'git --git-dir=.git reset --hard origin/master'),
-            self.HG: ('hg pull && '
-                      'hg update -C .'),
-        }[self.repo_type]
+            self.GIT: vcs.Git,
+            self.HG: vcs.Hg,
+        }[self.repo_type](self.repo, self.cache_dir)
 
     @property
     def cache_dir(self):
@@ -166,39 +143,16 @@ class Project(models.Model):
         Projects keep a full clone / checkout of the upstream repo for
         polling changes.
         """
-        if os.path.exists(self.cache_dir):
-            cmd = Command('cd %s && %s' % (
-                self.cache_dir,
-                self.update_command,
-            ))
-        else:
-            cmd = Command('cd %s && %s %s' % (
-                os.path.abspath(os.path.join(self.cache_dir, os.pardir)),
-                self.checkout_command,
-                self.slug
-            ))
-        if cmd.return_code != 0:
-            assert False, "%s failed" % cmd.command
+        self.vcs().update_source()
 
     @property
     def latest_revision(self):
         """
         Fetch the latest revision from SCM
         """
-        if not os.path.exists(self.cache_dir):
-            self.update_source()
-
-        if self.repo_type == self.GIT:
-            cmd = Command('cd %s && git rev-parse HEAD' % self.cache_dir)
-            if not cmd.return_code == 0:
-                assert False, "git rev-parse failed"
-            return cmd.out[:-1]
-
-        if self.repo_type == self.HG:
-            cmd = Command('cd %s && hg summary' % self.cache_dir)
-            if not cmd.return_code == 0:
-                assert False, "hg summary failed"
-            return cmd.out.split('parent: ')[1].split(':')[0]
+        vcs = self.vcs()
+        vcs.update_source()
+        return vcs.latest_revision()
 
     @property
     def build_status(self):
@@ -373,6 +327,13 @@ class Job(models.Model):
             logger.info("Cleaning build data")
             shutil.rmtree(self.build_path)
 
+    def vcs(self):
+        return {
+            Project.GIT: vcs.Git,
+            Project.HG: vcs.Hg,
+        }[self.build.project.repo_type](self.build.project.cache_dir,
+                                        self.build_path)
+
     def execute(self):
         """
         Execute all the things!
@@ -405,14 +366,7 @@ class Job(models.Model):
         """
         logger.info("Checking out %s" % self.build.project.repo)
         self.output += '[CI] Cloning...\n'
-        self.save()
-        command = self.build.project.local_checkout_command
-        cmd = Command('cd %s && %s %s' % (
-            os.path.join(settings.WORKSPACE, 'builds'),
-            command,
-            self.pk,
-        ))
-        self.check_response(cmd)
+        self.vcs().update_source()
 
     def run(self):
         """

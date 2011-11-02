@@ -279,23 +279,27 @@ class GitBuildTest(TestCase):
     Tests for actual build execution, with a git repository.
     """
     git_name = 'gitrepo'
+    hg_name = 'hgrepo'
+    repos = [git_name, hg_name]
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                             os.pardir, 'test_data'))
 
     def setUp(self):
         self._clean_data()
         # Extract local git repo archive
-        repo = tarfile.open(os.path.join(self.data_dir,
-                                         'gitrepo.tar.bz2'), 'r:bz2')
-        repo.extractall(path=self.data_dir)
+        for vcsrepo in self.repos:
+            repo = tarfile.open(os.path.join(self.data_dir,
+                                             '%s.tar.bz2' % vcsrepo), 'r:bz2')
+            repo.extractall(path=self.data_dir)
 
     def tearDown(self):
         self._clean_data()
 
     def _clean_data(self):
-        git_path = os.path.join(settings.WORKSPACE, 'repos')
-        git_repo = os.path.join(self.data_dir, 'gitrepo')
-        for directory in (git_path, git_repo):
+        to_remove = [os.path.join(settings.WORKSPACE, 'repos')] + [
+            os.path.join(self.data_dir, repo) for repo in self.repos
+        ]
+        for directory in to_remove:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
 
@@ -339,3 +343,49 @@ class GitBuildTest(TestCase):
         self._create_project()
         self.project.build()
         self.assertEqual(self.project.build_status, 'success')
+
+        Job.objects.get().checkout_source()
+        self.assertEqual(Job.objects.get().vcs().update_source().ref('HEAD'),
+                         'ee9001ef213388da653486a8f59a07f4aa4cfca6')
+
+    def test_vcs_handling(self):
+        self._create_project()
+        # Cleanup the existing clone
+        shutil.rmtree(os.path.join(settings.WORKSPACE, 'repos'))
+
+        # Git support
+        vcs = self.project.vcs()
+        # First run: clone
+        self.assertEqual(vcs.update_source().ref('HEAD'),
+                         'ee9001ef213388da653486a8f59a07f4aa4cfca6')
+
+        # Second run: fetch
+        self.assertEqual(vcs.update_source().ref('HEAD'),
+                         'ee9001ef213388da653486a8f59a07f4aa4cfca6')
+
+        # Get latest revision
+        self.assertEqual(vcs.latest_revision(),
+                         'ee9001ef213388da653486a8f59a07f4aa4cfca6')
+
+        # Mercurial support
+        shutil.rmtree(os.path.join(settings.WORKSPACE, 'repos'))
+        self.project.slug = 'hgrepo'
+        self.project.repo = os.path.abspath(os.path.join(self.data_dir,
+                                                         self.hg_name))
+        self.project.repo_type = self.project.HG
+        self.project.save()
+        vcs = self.project.vcs()
+
+        # First run: clone
+        repo = vcs.update_source()
+        self.assertEqual(str(repo.changectx(repo.changelog.tip())),
+                         '943b15c1040a')
+        self.assertEqual(Project.objects.get().latest_revision, '943b15c1040a')
+
+        # Second run: update
+        repo = vcs.update_source()
+        self.assertEqual(str(repo.changectx(repo.changelog.tip())),
+                         '943b15c1040a')
+
+        # Get latest revision
+        self.assertEqual(vcs.latest_revision(), '943b15c1040a')

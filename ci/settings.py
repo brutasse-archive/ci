@@ -13,7 +13,7 @@ CELERYD_CONCURRENCY = 1
 # gorun configuration -- https://github.com/peterbe/python-gorun
 # We don't care about everything in INSTALLED_APPS, just the ci.* tests.
 DIRECTORIES = (
-    ('', 'django-admin.py test projects --settings=ci.test_settings'),
+    ('', 'django-admin.py test projects --settings=ci.test_settings --failfast'),
 )
 IGNORE_EXTENSIONS = ('sqlite', 'sqlite-journal', 'css', 'scss')
 
