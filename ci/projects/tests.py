@@ -345,7 +345,7 @@ class GitBuildTest(TestCase):
         self.assertEqual(self.project.build_status, 'success')
 
         Job.objects.get().checkout_source()
-        self.assertEqual(Job.objects.get().vcs().update_source().ref('HEAD'),
+        self.assertEqual(Job.objects.get().vcs().latest_revision(),
                          'ee9001ef213388da653486a8f59a07f4aa4cfca6')
 
     def test_vcs_handling(self):
@@ -356,14 +356,12 @@ class GitBuildTest(TestCase):
         # Git support
         vcs = self.project.vcs()
         # First run: clone
-        self.assertEqual(vcs.update_source().ref('HEAD'),
+        vcs.update_source()
+        self.assertEqual(vcs.latest_revision(),
                          'ee9001ef213388da653486a8f59a07f4aa4cfca6')
 
         # Second run: fetch
-        self.assertEqual(vcs.update_source().ref('HEAD'),
-                         'ee9001ef213388da653486a8f59a07f4aa4cfca6')
-
-        # Get latest revision
+        vcs.update_source()
         self.assertEqual(vcs.latest_revision(),
                          'ee9001ef213388da653486a8f59a07f4aa4cfca6')
 
@@ -377,15 +375,10 @@ class GitBuildTest(TestCase):
         vcs = self.project.vcs()
 
         # First run: clone
-        repo = vcs.update_source()
-        self.assertEqual(str(repo.changectx(repo.changelog.tip())),
-                         '943b15c1040a')
+        vcs.update_source()
+        self.assertEqual(vcs.latest_revision(), '943b15c1040a')
         self.assertEqual(Project.objects.get().latest_revision, '943b15c1040a')
 
         # Second run: update
-        repo = vcs.update_source()
-        self.assertEqual(str(repo.changectx(repo.changelog.tip())),
-                         '943b15c1040a')
-
-        # Get latest revision
+        vcs.update_source()
         self.assertEqual(vcs.latest_revision(), '943b15c1040a')
