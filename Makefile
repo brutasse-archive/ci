@@ -9,3 +9,9 @@ syncdb:
 
 user:
 	django-admin.py createsuperuser --settings=ci.settings
+
+tests:
+	django-admin.py test projects --settings=ci.test_settings --failfast
+
+livetests:
+	django-admin.py test livetests --settings=ci.test_settings --failfast
