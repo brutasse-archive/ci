@@ -36,16 +36,19 @@ class Git(Vcs):
         Lists all local branches
         """
         repo = Repo(self.path)
-        return [
-            br[11:] for br in repo.refs.keys() if br.startswith('refs/heads/')
-        ]
+        return sorted([
+            br[20:] for br in repo.refs.keys() if (
+                br.startswith('refs/remotes/origin/') and
+                br[20:] != 'HEAD'
+            )
+        ])
 
     def latest_branch_revision(self, branch):
         """
         Returns the SHA of a branch's HEAD
         """
         repo = Repo(self.path)
-        return repo.get_refs()['refs/heads/' + branch]
+        return repo.get_refs()['refs/remotes/origin/' + branch]
 
 
 class ci(ui.ui):
