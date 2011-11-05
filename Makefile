@@ -14,4 +14,4 @@ tests:
 	django-admin.py test projects --settings=ci.test_settings --failfast
 
 livetests:
-	django-admin.py test livetests --settings=ci.test_settings --failfast
+	django-admin.py test livetests --settings=ci.test_settings --failfast --verbosity=2

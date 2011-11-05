@@ -14,3 +14,8 @@ LOGGING['handlers']['null'] = {
     'class': 'django.utils.log.NullHandler',
 }
 LOGGING['loggers']['ci']['handlers'] = ['null']
+
+# Live tests hit the network
+INSTALLED_APPS += (
+    'ci.livetests',
+)
