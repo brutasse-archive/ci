@@ -4,7 +4,7 @@ shell:
 run:
 	foreman start
 
-syncdb:
+db:
 	django-admin.py syncdb  --settings=ci.settings --noinput
 
 user:

@@ -43,7 +43,7 @@ Setup your environment::
     git clone git://github.com/brutasse/ci.git
     cd ci
     sh bootstrap.sh
-    make syncdb
+    make db
 
 Get `gorun`_.
 
