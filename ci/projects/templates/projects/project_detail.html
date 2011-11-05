@@ -17,10 +17,14 @@
 		<h6>{% trans "Build instructions" %} (<a href="{% url "project_admin" object.slug %}">{% trans "Change" %}</a>)</h6>
 		<pre>{{ object.build_instructions }}</pre>
 
-		<h6>{% trans "Build axes" %}</h6>
-		<ul>{% for config in object.configurations.all %}
-				<li><strong>{{ config }}</strong>: {% for val in config.values.all %}{{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
-		{% endfor %}</ul>
+		{% with object.configurations.all as axes %}
+			{% if axes %}
+				<h6>{% trans "Build axes" %}</h6>
+				<ul>{% for config in axes %}
+						<li><strong>{{ config }}</strong>: {% for val in config.values.all %}{{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+				{% endfor %}</ul>
+			{% endif %}
+		{% endwith %}
 
 		<h6>{% trans "Build URL" %}</h6>
 		<p>{% trans "To build this project automatically on pushes, create a hook issuing a POST request to this URL:" %} <pre>http://{{ site.domain }}{% url "project_trigger_build" object.slug %}</pre>
