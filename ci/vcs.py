@@ -28,8 +28,7 @@ class Git(Vcs):
         command = Command(cmd)
 
     def latest_revision(self):
-        repo = Repo(self.path)
-        return repo.head()
+        return self.latest_branch_revision('master')
 
     def branches(self):
         """
@@ -66,5 +65,12 @@ class Hg(Vcs):
         command = Command(cmd)
 
     def latest_revision(self):
+        return self.latest_branch_revision('default')
+
+    def branches(self):
         repo = hg.repository(ci(), self.path)
-        return str(repo.changectx(repo.changelog.tip()))
+        return sorted([repo[n].branch() for n in repo.heads()])
+
+    def latest_branch_revision(self, branch):
+        repo = hg.repository(ci(), self.path)
+        return repo.changelog.rev(repo.branchtags()[branch])
