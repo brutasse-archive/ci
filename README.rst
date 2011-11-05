@@ -19,6 +19,9 @@ Stack
 Hacking
 -------
 
+Setting up
+``````````
+
 Add to your ``~/.virtualenvs/postactivate``::
 
     export GEM_HOME="$VIRTUAL_ENV/gems"
@@ -36,6 +39,9 @@ Get `gorun`_.
 
 .. _gorun: https://github.com/peterbe/python-gorun
 
+Running
+```````
+
 Run all the things::
 
     make run
@@ -47,3 +53,18 @@ This will run:
 * Compass for compiling the CSS
 * Gorun for running the tests when code changes (linux-only, cross-platform
   *and* native alternatives are welcome)
+
+Testing
+```````
+
+To run the local test suite, do::
+
+    make tests
+
+The local tests are only mostly local, you need an internet connection for all
+tests to pass.
+
+To run the "live" tests (they make actual clones and builds from the
+internet)::
+
+    make livetests
