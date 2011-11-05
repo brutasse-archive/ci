@@ -95,6 +95,7 @@ class ProjectTests(TestCase):
             'build_instructions': 'echo "LOL"',
             'sequential': False,
             'keep_build_data': True,
+            'build_branches': 'default',
         }
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, 'successfully updated')
@@ -384,6 +385,9 @@ class GitBuildTest(TestCase):
         # Already built -- nothing happens
         self.assertFalse(self.project.build())
         self.assertEqual(Build.objects.count(), 1)
+
+        # Re-building the last build
+        self.project.builds.get().queue()
 
     def test_revision(self):
         """Fetching the latest revision from the VCS"""

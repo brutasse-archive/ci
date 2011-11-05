@@ -28,6 +28,9 @@
 
 		<h6>{% trans "Build URL" %}</h6>
 		<p>{% trans "To build this project automatically on pushes, create a hook issuing a POST request to this URL:" %} <pre>http://{{ site.domain }}{% url "project_trigger_build" object.slug %}</pre>
+
+		<h6>{% trans "Branches to build" %}</h6>
+		<p>{{ object.get_build_branches_display }} ({% if object.build_branches == object.ALL_BRANCHES %}{% for branch in object.vcs.branches %}{{ branch }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ object.vcs.default_branch }}{% endif %})</p>
 	</section>
 
 	<section class="build_status">
@@ -40,6 +43,7 @@
 			{% for build in last_build.jobs.all %}
 				<li>
 					<div class="name"><a href="{% url "project_job" object.slug last_build.pk build.pk %}">#{{ build.pk }}</a>
+						<span><strong>{{ last_build.branch}}</strong>:{{ last_build.short_rev }}</span>
 						<span>{% for key, val in build.values_data.items %}<strong>{{ key}}:</strong> {{ val }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
 					</div>
 					<div class="status {{ build.status }}"><span>{{ build.status }}</span></div>

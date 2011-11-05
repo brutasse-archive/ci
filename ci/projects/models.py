@@ -27,6 +27,14 @@ class Project(models.Model):
         (HG, _('Mercurial')),
     )
 
+    ALL_BRANCHES = 'all'
+    DEFAULT_BRANCH = 'default'
+
+    BRANCHES = (
+        (DEFAULT_BRANCH, _('Default branch')),
+        (ALL_BRANCHES, _('All')),
+    )
+
     name = models.CharField(_('Name'), max_length=255)
     slug = models.SlugField(_('Slug'), max_length=255, unique=True)
 
@@ -55,6 +63,8 @@ class Project(models.Model):
     )
     xunit_xml_report = models.CharField(_('XML test report'), blank=True,
                                         max_length=1023)
+    build_branches = models.CharField(_('Branches to build'), max_length=50,
+                                      choices=BRANCHES, default=DEFAULT_BRANCH)
 
     class Meta:
         ordering = ('name',)
@@ -96,9 +106,30 @@ class Project(models.Model):
         (revisions are not built twice).
         """
         self.update_source()
-        if self.builds.filter(revision=self.latest_revision):
+        vcs = self.vcs()
+        branches = ([vcs.default_branch]
+                    if self.build_branches == self.DEFAULT_BRANCH
+                    else vcs.branches())
+
+        jobs = []
+        for branch in branches:
+            branch_jobs = self.build_branch(branch)
+            if branch_jobs is not None:
+                jobs = list(itertools.chain(jobs, branch_jobs))
+
+        if self.sequential:
+            from .tasks import execute_jobs
+            execute_jobs.delay([j.pk for j in jobs])
+        else:
+            for job in jobs:
+                job.queue()
+        return bool(jobs)
+
+    def build_branch(self, branch):
+        rev = self.vcs().latest_branch_revision(branch)
+        if self.builds.filter(branch=branch, revision=rev).exists():
             # Latest rev already build -- don't bother
-            return False
+            return
         configs = self.configurations.all()
         if configs:
             products = []
@@ -115,11 +146,13 @@ class Project(models.Model):
 
         build = Build.objects.create(
             project=self,
-            revision=self.latest_revision,
+            revision=rev,
+            branch=branch,
             matrix=json.dumps(matrix),
             build_instructions=self.build_instructions,
             xunit_xml_report=self.xunit_xml_report,
         )
+        jobs = []
 
         if configs:
             for values in items:
@@ -127,16 +160,13 @@ class Project(models.Model):
                     build=build,
                     values=json.dumps({v.key.key: v.value for v in values}),
                 )
-                if not self.sequential:
-                    job.queue()
-            if self.sequential:
-                build.queue()
+                jobs.append(job)
         else:
             job = Job.objects.create(
                 build=build,
             )
-            job.queue()
-        return True
+            jobs.append(job)
+        return jobs
 
     def update_source(self):
         """
@@ -216,6 +246,7 @@ class Build(models.Model):
     project = models.ForeignKey(Project, verbose_name=_('Project'),
                                 related_name='builds')
     revision = models.CharField(_('Revision built'), max_length=1023)
+    branch = models.CharField(_('Branch'), max_length=1023)
     creation_date = models.DateTimeField(_('Date created'),
                                          default=datetime.datetime.now)
 
@@ -237,8 +268,9 @@ class Build(models.Model):
         """
         Trigger a sequential build.
         """
-        from .tasks import execute_build
-        execute_build.delay(self.pk)
+        from .tasks import execute_jobs
+        job_ids = list(self.jobs.values_list('pk', flat=True))
+        execute_jobs.delay(job_ids)
 
     @property
     def matrix_data(self):
@@ -259,7 +291,10 @@ class Build(models.Model):
         success = [build for build in builds if build.status == build.SUCCESS]
         if success:
             return 'success'
-        return 'not running. not failed. not success. what is it?'
+        pending = [build for build in builds if build.status == build.PENDING]
+        if pending:
+            return 'pending'
+        return 'not running. not failed. not success. not pending. what is it?'
 
     @property
     def short_rev(self):
@@ -366,7 +401,9 @@ class Job(models.Model):
         """
         logger.info("Checking out %s" % self.build.project.repo)
         self.output += '[CI] Cloning...\n'
-        self.vcs().update_source()
+        vcs = self.vcs()
+        vcs.update_source()
+        vcs.checkout(self.build.revision)
 
     def run(self):
         """

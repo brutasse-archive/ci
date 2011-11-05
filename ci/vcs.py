@@ -15,6 +15,8 @@ class Vcs(object):
 
 
 class Git(Vcs):
+    default_branch = 'master'
+
     def update_source(self):
         """
         Clones if the project hasn't been cloned yet. Fetches otherwise.
@@ -42,6 +44,9 @@ class Git(Vcs):
             )
         ])
 
+    def checkout(self, revision):
+        Command('cd %s && git checkout %s' % (self.path, revision))
+
     def latest_branch_revision(self, branch):
         """
         Returns the SHA of a branch's HEAD
@@ -57,6 +62,8 @@ class ci(ui.ui):
 
 
 class Hg(Vcs):
+    default_branch = 'default'
+
     def update_source(self):
         if os.path.exists(self.path):
             cmd = 'cd %s && hg pull && hg update -C' % self.path
@@ -74,3 +81,6 @@ class Hg(Vcs):
     def latest_branch_revision(self, branch):
         repo = hg.repository(ci(), self.path)
         return repo.changelog.rev(repo.branchtags()[branch])
+
+    def checkout(self, revision):
+        Command('cd %s && hg checkout %s' % (self.path, revision))

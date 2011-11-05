@@ -64,11 +64,13 @@ class ProjectBuildForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = ['build_instructions', 'sequential', 'keep_build_data',
-                  'xunit_xml_report']
+                  'xunit_xml_report', 'build_branches']
         widgets = {
             'build_instructions': forms.Textarea,
             'sequential': forms.CheckboxInput,
             'keep_build_data': forms.CheckboxInput,
+            'xunit_xml_report': forms.TextInput,
+            'build_branches': forms.Select,
         }
 
 

@@ -5,14 +5,16 @@
 {% block content %}
 	<section class="build_summary">{% url "project" project.slug as project_url %}
 		<h1>{% blocktrans with object.pk as build_id %}Build #{{ build_id }} of <a href="{{ project_url }}">{{ project }}</a>{% endblocktrans %}</h1>
-		<p class="meta">{{ object.creation_date }} - {{ object.short_rev }}</p>
+		<p class="meta">{{ object.creation_date }} - <strong>{{ object.branch }}</strong>:{{ object.short_rev }}</p>
 		<h6>{% trans "Build instructions" %}</h6>
 		<pre>{{ object.build_instructions }}</pre>
 
-		<h6>{% trans "Build axes" %}</h6>
-		<ul>{% for key, values in object.matrix_data.items %}
-				<li><strong>{{ key }}</strong>: {% for value in values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
-		{% endfor %}</ul>
+		{% if object.matrix_data %}
+			<h6>{% trans "Build axes" %}</h6>
+			<ul>{% for key, values in object.matrix_data.items %}
+					<li><strong>{{ key }}</strong>: {% for value in values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+			{% endfor %}</ul>
+		{% endif %}
 	</section>
 
 	<section class="build_status">

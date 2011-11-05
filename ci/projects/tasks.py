@@ -1,7 +1,7 @@
 from celery.decorators import task
 
 from .exceptions import BuildException
-from .models import Job, Build, Project
+from .models import Job, Project
 
 
 @task(ignore_result=True)
@@ -13,12 +13,11 @@ def execute_job(job_id):
 
 
 @task(ignore_result=True)
-def execute_build(build_id):
+def execute_jobs(job_ids):
     """
     Sequential build.
     """
-    build = Build.objects.get(pk=build_id)
-    for job in build.jobs.all():
+    for job in Job.objects.filter(pk__in=job_ids):
         try:
             job.execute()
         except BuildException:

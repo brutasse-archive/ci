@@ -4,7 +4,7 @@ import shutil
 from django.conf import settings
 from django.test import TestCase
 
-from ..projects.models import Project, Job
+from ..projects.models import Project, Build, Job
 
 BUILD = """virtualenv ci --python python2
 source ci/bin/activate
@@ -27,6 +27,7 @@ class LiveTests(TestCase):
             slug='testproject-git',
             repo='https://github.com/brutasse/testproject',
             build_instructions=BUILD,
+            build_branches='all',
         )
 
     def _create_hg_project(self):
@@ -58,8 +59,20 @@ class LiveTests(TestCase):
         self._create_git_project()
         self.project.build()
 
-        self.assertTrue('Ran 3 tests in ' in Job.objects.get().output)
-        self.assertEqual(Job.objects.get().status, 'success')
+        self.assertEqual(Build.objects.count(), 2)
+        self.assertEqual(Build.objects.get(branch='master').revision,
+                         "e451f81061f3b832e0455ce257ea608022ee18b0")
+
+        self.assertEqual(Build.objects.get(branch='experimental').revision,
+                         "1bdf1363d154e476628d584654c602ccaad23332")
+
+        self.assertTrue('Ran 3 tests in ' in
+                        Job.objects.get(build__branch='master').output)
+
+        self.assertTrue("project      17      1    94%   18" in
+                        Job.objects.get(build__branch='experimental').output)
+        self.assertEqual(Job.objects.get(build__branch='master').status,
+                         'success')
 
     def test_hg_handling(self):
         """Hg-related operations"""

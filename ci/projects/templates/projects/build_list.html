@@ -8,7 +8,7 @@
 
 		<ul>{% for build in object_list %}
 				<li>
-				<div class="name"><a href="{% url "project_build" project.slug build.pk %}">#{{ build.pk }}</a> <span class="date">{{ build.creation_date }}</span> <span class="revision">{{ build.short_rev }}</span></div>
+				<div class="name"><a href="{% url "project_build" project.slug build.pk %}">#{{ build.pk }}</a> <span class="date">{{ build.creation_date }}</span> <span class="revision"><strong>{{ build.branch }}</strong>:{{ build.short_rev }}</span></div>
 					<div class="status {{ build.build_status }}"><span>{{ build.build_status }}</span></div>
 				</li>
 			{% empty %}
