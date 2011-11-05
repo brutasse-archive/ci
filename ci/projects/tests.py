@@ -65,7 +65,7 @@ class ProjectTests(TestCase):
 
         data = {
             'name': 'django-le-social',
-            'repo': 'https://github.com/brutasse/django-le-social',
+            'repo': 'git://github.com/brutasse/django-le-social.git',
             'repo_type': 'git',
             'build_instructions': 'python setup.py test',
         }
@@ -277,7 +277,7 @@ class ProjectTests(TestCase):
         url = reverse('add_project')
         data = {
             'name': 'django-floppyforms',
-            'repo': 'https://github.com/brutasse/django-floppyforms',
+            'repo': 'git://github.com/brutasse/django-floppyforms.git',
             'repo_type': 'git',
             'build_instructions': 'echo "lol"',
         }
@@ -292,6 +292,38 @@ class ProjectTests(TestCase):
         self.assertFormError(
             response, 'form', 'name', ['This name conflicts with an existing '
                                        '"django-floppyforms" project.'])
+
+    def test_validate_git_url(self):
+        url = reverse('add_project')
+        data = {
+            'name': 'django-floppyforms',
+            'repo': 'garbage garbage',
+            'repo_type': 'git',
+            'build_instructions': 'echo "lol"',
+        }
+        response = self.client.post(url, data)
+        self.assertFormError(response, 'form', None,
+                             "Invalid Git URL: '%s'" % data['repo'])
+
+        data['repo'] = 'git://github.com/brutasse/django-floppyforms.git'
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_validate_hg_url(self):
+        url = reverse('add_project')
+        data = {
+            'name': 'django-floppyforms',
+            'repo': 'garbage garbage',
+            'repo_type': 'hg',
+            'build_instructions': 'echo "lol"',
+        }
+        response = self.client.post(url, data)
+        self.assertFormError(response, 'form', None,
+                             "Invalid Hg URL: '%s'" % data['repo'])
+
+        data['repo'] = 'ssh://hg@bitbucket.org/bruno/testproject'
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
 
 
 class GitBuildTest(TestCase):

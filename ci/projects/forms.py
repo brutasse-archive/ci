@@ -4,6 +4,10 @@ from django.utils.translation import ugettext_lazy as _
 
 import floppyforms as forms
 
+from dulwich.client import get_transport_and_path, SubprocessGitClient
+from mercurial import hg, ui
+from mercurial.error import RepoError
+
 from .models import Project
 
 
@@ -27,6 +31,33 @@ class ProjectForm(forms.ModelForm):
                   'project.') % existing[0].name
             )
         return self.cleaned_data['name']
+
+    def clean(self):
+        repo_type = self.cleaned_data.get('repo_type', None)
+        repo = self.cleaned_data['repo']
+        if repo_type is None:  # required field
+            return self.cleaned_data
+
+        getattr(self, 'validate_%s_url' % repo_type)(repo)
+        return self.cleaned_data
+
+    def validate_git_url(self, url):
+        error = _("Invalid Git URL: '%s'") % url
+        try:
+            client, path = get_transport_and_path(url)
+        except ValueError:
+            raise forms.ValidationError(error)
+
+        if isinstance(client, SubprocessGitClient):
+            raise forms.ValidationError(error)
+
+    def validate_hg_url(self, url):
+        error = _("Invalid Hg URL: '%s'") % url
+        source, branches = hg.parseurl(url)
+        try:
+            hg.repository(ui.ui(), source)
+        except RepoError:
+            raise forms.ValidationError(error)
 
 
 class ProjectBuildForm(forms.ModelForm):
