@@ -1,4 +1,5 @@
 from django.forms.formsets import formset_factory, BaseFormSet
+from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
 
 import floppyforms as forms
@@ -16,6 +17,16 @@ class ProjectForm(forms.ModelForm):
             'repo_type': forms.Select,
             'build_instructions': forms.Textarea,
         }
+
+    def clean_name(self):
+        slug_candidate = slugify(self.cleaned_data['name'])
+        existing = Project.objects.filter(slug=slug_candidate)
+        if existing:
+            raise forms.ValidationError(
+                _('This name conflicts with an existing "%s" '
+                  'project.') % existing[0].name
+            )
+        return self.cleaned_data['name']
 
 
 class ProjectBuildForm(forms.ModelForm):

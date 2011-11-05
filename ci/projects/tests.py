@@ -273,6 +273,26 @@ class ProjectTests(TestCase):
         self.assertContains(response, '0 errors')
         self.assertContains(response, 'AssertionError: False is not True')
 
+    def test_duplicate_slug(self):
+        url = reverse('add_project')
+        data = {
+            'name': 'django-floppyforms',
+            'repo': 'https://github.com/brutasse/django-floppyforms',
+            'repo_type': 'git',
+            'build_instructions': 'echo "lol"',
+        }
+
+        # First submission: project creation
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+
+        # 2nd submission: conflict
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response, 'form', 'name', ['This name conflicts with an existing '
+                                       '"django-floppyforms" project.'])
+
 
 class GitBuildTest(TestCase):
     """
