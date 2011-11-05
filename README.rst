@@ -7,6 +7,16 @@ Django.
 Don't use it unless you're interested in contributing. In which case, see
 below.
 
+Goals
+-----
+
+* Support for major DVCSs
+* Build axes ala Jenkins
+* Branch support
+* Xunit, Cobertura reports. Stats porn.
+* Comprehensive, read-write, HTTP API
+* Real-time endpoint. No plugins.
+
 Stack
 -----
 
