@@ -376,9 +376,9 @@ class GitBuildTest(TestCase):
 
         # First run: clone
         vcs.update_source()
-        self.assertEqual(vcs.latest_revision(), '943b15c1040a')
-        self.assertEqual(Project.objects.get().latest_revision, '943b15c1040a')
+        self.assertEqual(vcs.latest_revision(), 1)
+        self.assertEqual(Project.objects.get().latest_revision, 1)
 
         # Second run: update
         vcs.update_source()
-        self.assertEqual(vcs.latest_revision(), '943b15c1040a')
+        self.assertEqual(vcs.latest_revision(), 1)
