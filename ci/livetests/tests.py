@@ -74,6 +74,16 @@ class LiveTests(TestCase):
         self.assertEqual(Job.objects.get(build__branch='master').status,
                          'success')
 
+        # Build specific revisions
+        build = self.project.builds.create(
+            revision="1d8593c04052d75fee693f383f7180da6db837da",
+            branch="master",
+            build_instructions=BUILD,
+        )
+        job = build.jobs.create()
+        build.queue()
+        self.assertTrue("Ran 1 test in " in build.jobs.get().output)
+
     def test_hg_handling(self):
         """Hg-related operations"""
         self._create_hg_project()

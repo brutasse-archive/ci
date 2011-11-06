@@ -2,6 +2,8 @@ import os
 import logging
 import subprocess
 
+from .exceptions import CommandError
+
 logger = logging.getLogger('ci')
 
 
@@ -32,6 +34,14 @@ class Command(object):
         if output:
             self.out += output
         self.return_code = self.process.returncode
+
+        # Raise an error if the command isn't successful
+        if self.return_code != 0:
+            msg = 'Error while running "%s": returned %s' % (
+                self.command, self.return_code,
+            )
+            logger.info(msg)
+            raise CommandError(msg, self)
 
     def __repr__(self):
         return '<Command: %s (%s)>' % (self.command, self.return_code)

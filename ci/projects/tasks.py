@@ -1,6 +1,6 @@
 from celery.decorators import task
 
-from .exceptions import BuildException
+from .exceptions import CommandError
 from .models import Job, Project
 
 
@@ -8,7 +8,7 @@ from .models import Job, Project
 def execute_job(job_id):
     try:
         Job.objects.get(pk=job_id).execute()
-    except BuildException:
+    except CommandError:
         pass  # It's being reported, task is complete.
 
 
@@ -20,7 +20,7 @@ def execute_jobs(job_ids):
     for job in Job.objects.filter(pk__in=job_ids):
         try:
             job.execute()
-        except BuildException:
+        except CommandError:
             pass
 
 

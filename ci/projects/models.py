@@ -12,7 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from .. import vcs
 from ..parsers import XunitParser
-from .exceptions import BuildException
+from .exceptions import CommandError
 from .utils import Command
 
 logger = logging.getLogger('ci')
@@ -385,12 +385,18 @@ class Job(models.Model):
         self.delete_build_data()
         self.output = ''
 
-        self.checkout_source()
-        self.run()
-        self.fetch_reports()
-        logger.info("%s finished: SUCCESS" % self.__unicode__())
+        try:
+            self.checkout_source()
+            self.run()
+            self.fetch_reports()
+            self.status = self.SUCCESS
+        except CommandError as e:
+            self.output += str(e) + '\n'
+            self.status = self.FAILURE
+
+        logger.info("%s finished: %s" % (self.__unicode__(),
+                                         self.status.upper()))
         self.end_date = datetime.datetime.now()
-        self.status = self.SUCCESS
         if not self.build.project.keep_build_data:
             self.delete_build_data()
         self.save()
@@ -403,7 +409,7 @@ class Job(models.Model):
         self.output += '[CI] Cloning...\n'
         vcs = self.vcs()
         vcs.update_source()
-        vcs.checkout(self.build.revision)
+        vcs.checkout(self.build.branch, self.build.revision)
 
     def run(self):
         """
@@ -418,29 +424,7 @@ class Job(models.Model):
         self.save()
         cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
                       environ=env, stream_to=self.stream_to)
-        self.check_response(cmd)
-
-    def check_response(self, cmd):
-        """
-        Checks that a command is successful. Raises a BuildError if
-        not, adds stdout and stderr to the build log.
-        """
-        if cmd.out:
-            self.output += cmd.out
-        if cmd.return_code != 0:
-            msg = 'Error while running "%s": returned %s' % (
-                cmd.command, cmd.return_code,
-            )
-            self.output += msg + '\n'
-            self.status = self.FAILURE
-            self.end_date = datetime.datetime.now()
-            logger.info("%s failed: %s" % (self.__unicode__(), msg))
-            self.save()
-            if not self.build.project.keep_build_data:
-                self.delete_build_data()
-            raise BuildException(msg, cmd)
-        logger.info("Command completed successfully: %s" % cmd.command)
-        self.save()
+        self.output += cmd.out
 
     def fetch_reports(self):
         """
@@ -452,7 +436,6 @@ class Job(models.Model):
         with open(os.path.join(self.build_path,
                                self.build.xunit_xml_report)) as xml:
             self.xunit_xml_report = xml.read()
-        self.save()
 
     def queue(self):
         """

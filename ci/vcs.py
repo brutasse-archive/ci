@@ -44,8 +44,12 @@ class Git(Vcs):
             )
         ])
 
-    def checkout(self, revision):
-        Command('cd %s && git checkout %s' % (self.path, revision))
+    def checkout(self, branch, revision):
+        if branch != self.default_branch:
+            branch = '-b %s' % branch
+        Command('cd %s && git checkout %s && git reset --hard %s' % (
+            self.path, branch, revision,
+        ))
 
     def latest_branch_revision(self, branch):
         """
@@ -82,5 +86,7 @@ class Hg(Vcs):
         repo = hg.repository(ci(), self.path)
         return repo.changelog.rev(repo.branchtags()[branch])
 
-    def checkout(self, revision):
-        Command('cd %s && hg checkout %s' % (self.path, revision))
+    def checkout(self, branch, revision):
+        Command('cd %s && hg update -C %s && hg update -r %s' % (
+            self.path, branch, revision,
+        ))
