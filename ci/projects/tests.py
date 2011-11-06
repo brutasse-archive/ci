@@ -11,6 +11,7 @@ from celery.decorators import task
 
 from . import tasks
 from .models import Project, Configuration, Value, Build, Job
+from .utils import Command
 
 
 class ProjectTests(TestCase):
@@ -403,6 +404,65 @@ class GitBuildTest(TestCase):
         Job.objects.get().checkout_source()
         self.assertEqual(Job.objects.get().vcs().latest_revision(),
                          'ee9001ef213388da653486a8f59a07f4aa4cfca6')
+
+    def test_new_git_branch(self):
+        """New remote branch - git"""
+        self._create_project()
+        self.project.build_branches = Project.ALL_BRANCHES
+        self.project.save()
+
+        self.project.build()
+        self.assertEqual(self.project.build_status, 'success')
+        self.assertEqual(Build.objects.count(), 1)
+
+        Command(
+            ('cd %s && '
+             'git checkout -b foo && '
+             'echo "yay" >> README && '
+             'git commit -am "Added stuff to branch foo"') % (
+                 self.project.repo
+             )
+        )
+        self.project.update_source()
+        self.assertEqual(self.project.vcs().branches(), ['foo', 'master'])
+        self.assertNotEqual(
+            self.project.vcs().latest_branch_revision('master'),
+            self.project.vcs().latest_branch_revision('foo'),
+        )
+        self.project.build()
+        self.assertEqual(Build.objects.count(), 2)
+
+    def test_new_hg_branch(self):
+        project = Project.objects.create(
+            name='hgrepo',
+            slug='hgrepo',
+            repo=os.path.abspath(os.path.join(self.data_dir, self.hg_name)),
+            repo_type=Project.HG,
+            build_instructions='echo 1',
+            build_branches=Project.ALL_BRANCHES,
+        )
+
+        project.build()
+        self.assertEqual(project.build_status, 'success')
+        self.assertEqual(Build.objects.count(), 1)
+
+        Command(
+            ('cd %s && '
+             'hg branch foo && '
+             'echo "yay" >> README && '
+             'hg ci -m "Added stuff to branch foo"') % project.repo
+        )
+
+        self.assertEqual(project.vcs().branches(), ['default'])
+        project.update_source()
+        self.assertEqual(project.vcs().branches(), ['foo'])
+
+        self.assertNotEqual(
+            project.vcs().latest_branch_revision('default'),
+            project.vcs().latest_branch_revision('foo'),
+        )
+        project.build()
+        self.assertEqual(Build.objects.count(), 2)
 
     def test_vcs_handling(self):
         self._create_project()
