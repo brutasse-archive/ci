@@ -449,13 +449,12 @@ class GitBuildTest(TestCase):
         Command(
             ('cd %s && '
              'hg branch foo && '
-             'echo "yay" >> README && '
-             'hg ci -m "Added stuff to branch foo"') % project.repo
+             'hg ci -m "Creating branch foo"') % project.repo
         )
 
         self.assertEqual(project.vcs().branches(), ['default'])
         project.update_source()
-        self.assertEqual(project.vcs().branches(), ['foo'])
+        self.assertEqual(project.vcs().branches(), ['default', 'foo'])
 
         self.assertNotEqual(
             project.vcs().latest_branch_revision('default'),

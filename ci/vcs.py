@@ -80,7 +80,7 @@ class Hg(Vcs):
 
     def branches(self):
         repo = hg.repository(ci(), self.path)
-        return sorted([repo[n].branch() for n in repo.heads()])
+        return sorted(repo.branchtags().keys())
 
     def latest_branch_revision(self, branch):
         repo = hg.repository(ci(), self.path)
