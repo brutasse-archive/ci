@@ -45,8 +45,6 @@ class Git(Vcs):
         ])
 
     def checkout(self, branch, revision):
-        if branch != self.default_branch:
-            branch = '-b %s' % branch
         Command('cd %s && git checkout %s && git reset --hard %s' % (
             self.path, branch, revision,
         ))
