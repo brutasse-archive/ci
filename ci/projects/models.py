@@ -117,7 +117,7 @@ class Project(models.Model):
             if branch_jobs is not None:
                 jobs = list(itertools.chain(jobs, branch_jobs))
 
-        if self.sequential:
+        if jobs and self.sequential:
             from .tasks import execute_jobs
             execute_jobs.delay([j.pk for j in jobs])
         else:
