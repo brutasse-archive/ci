@@ -366,7 +366,7 @@ class Job(models.Model):
         return {
             Project.GIT: vcs.Git,
             Project.HG: vcs.Hg,
-        }[self.build.project.repo_type](self.build.project.cache_dir,
+        }[self.build.project.repo_type](self.build.project.repo,
                                         self.build_path)
 
     def execute(self):
@@ -392,6 +392,7 @@ class Job(models.Model):
             self.status = self.SUCCESS
         except CommandError as e:
             self.output += str(e) + '\n'
+            self.output += e.command.out
             self.status = self.FAILURE
 
         logger.info("%s finished: %s" % (self.__unicode__(),
