@@ -107,7 +107,7 @@ class Project(models.Model):
         """
         self.update_source()
         vcs = self.vcs()
-        branches = ([vcs.default_branch]
+        branches = ([vcs.default_branch]  # TODO detect repo's default branch
                     if self.build_branches == self.DEFAULT_BRANCH
                     else vcs.branches())
 

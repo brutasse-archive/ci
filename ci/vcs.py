@@ -3,6 +3,7 @@ import os
 from StringIO import StringIO
 
 from dulwich.repo import Repo
+from dulwich.walk import Walker
 from mercurial import ui, hg
 
 from .projects.utils import Command
@@ -16,6 +17,12 @@ class Vcs(object):
 
 class Git(Vcs):
     default_branch = 'master'
+
+    @property
+    def repo(self):
+        """Needed as a property since self.path may not exist at
+        instanciation time."""
+        return Repo(self.path)
 
     def update_source(self):
         """
@@ -36,9 +43,8 @@ class Git(Vcs):
         """
         Lists all local branches
         """
-        repo = Repo(self.path)
         return sorted([
-            br[20:] for br in repo.refs.keys() if (
+            br[20:] for br in self.repo.refs.keys() if (
                 br.startswith('refs/remotes/origin/') and
                 br[20:] != 'HEAD'
             )
@@ -53,8 +59,18 @@ class Git(Vcs):
         """
         Returns the SHA of a branch's HEAD
         """
-        repo = Repo(self.path)
-        return repo.get_refs()['refs/remotes/origin/' + branch]
+        return self.repo.get_refs()['refs/remotes/origin/' + branch]
+
+    def changelog(self, branch, since=None):
+        """
+        Returns the commits made in branch <branch> since revision <since>.
+        """
+        walker = Walker(self.repo, [self.latest_branch_revision(branch)])
+        commits = []
+        for entry in walker:
+            if since is not None and entry.commit.id == since:
+                break
+            yield entry.commit
 
 
 class ci(ui.ui):

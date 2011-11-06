@@ -497,3 +497,13 @@ class GitBuildTest(TestCase):
         # Second run: update
         vcs.update_source()
         self.assertEqual(vcs.latest_revision(), 1)
+
+    def test_history(self):
+        """Fetching changelog for each build"""
+        self._create_project()
+
+        vcs = self.project.vcs()
+        self.assertEqual(len(list(vcs.changelog('master'))), 2)
+        self.assertEqual(len(list(vcs.changelog(
+            'master', since='08df487ae5005c2e699e3030c236c56356f398f8',
+        ))), 1)
