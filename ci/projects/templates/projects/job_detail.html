@@ -3,7 +3,7 @@
 {% block content %}
 	<section class="build">
 		<h1>
-			<div>{% blocktrans with object.pk as build_id %}Build #{{ build_id }}{% endblocktrans %}<span></div>
+			<div>{% blocktrans with object.pk as build_id %}Job #{{ build_id }}{% endblocktrans %}<span></div>
 			<div class="status {{ object.status }}"><span>{{ object.status }}</span></div>
 		</h1>
 		<div class="meta">
