@@ -20,16 +20,13 @@ class Commit(object):
         self.author = author
         self.timestamp = timestamp
         self.message = message
-        self.files = files
+        self.files = sorted(files)
 
-    def dump(self):
-        return json.dumps({
-            'rev': self.rev,
-            'author': self.author,
-            'timestamp': self.timestamp.isoformat(),
-            'message': self.message,
-            'files': self.files,
-        })
+    @property
+    def serializable(self):
+        serialible = self.__dict__
+        serialible['timestamp'] = self.timestamp.isoformat()
+        return serialible
 
 
 class Vcs(object):

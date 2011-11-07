@@ -531,3 +531,38 @@ class GitBuildTest(TestCase):
         vcs = self.project.vcs()
         self.assertEqual(len(list(vcs.changelog('foo'))), 1)
         self.assertEqual(len(list(vcs.changelog('default'))), 2)
+
+    def test_build_with_history(self):
+        self._create_project()
+        self.project.build_branches = Project.ALL_BRANCHES
+        self.project.save()
+        self.assertTrue(self.project.build())
+        self.assertEqual(len(Build.objects.get().history_data), 2)
+
+        # New branch, 1 commit away from master
+        Command(
+            ('cd %s && '
+             'git checkout -b foo && '
+             'echo "yay" >> README && '
+             'git commit -am "Added stuff to branch foo"') % (
+                 self.project.repo
+             )
+        )
+
+        self.assertTrue(self.project.build())
+        # 1 new commit from last build
+        self.assertEqual(len(self.project.builds.all()[0].history_data), 1)
+
+        # New commit to master
+        Command(
+            ('cd %s && '
+             'git checkout master && '
+             'echo "foobar" >> README && '
+             'git commit -am "More instructions"') % (
+                 self.project.repo
+             )
+        )
+        self.assertTrue(self.project.build())
+        last_build = self.project.builds.all()[0]
+        self.assertEqual(len(last_build.history_data), 1)
+        self.assertEqual(last_build.branch, 'master')

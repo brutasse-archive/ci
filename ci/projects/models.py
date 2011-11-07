@@ -144,11 +144,23 @@ class Project(models.Model):
         else:
             matrix = {}
 
+        # Attach some history info
+        last_rev = None
+        same_branch = self.builds.filter(branch=branch)
+        if same_branch:
+            last_rev = same_branch[0].revision
+        else:
+            prev_build = self.builds.all()[:1]
+            if prev_build:
+                last_rev = prev_build[0].revision
+        history = self.vcs().changelog(branch, last_rev)
+
         build = Build.objects.create(
             project=self,
             revision=rev,
             branch=branch,
             matrix=json.dumps(matrix),
+            history=json.dumps([c.serializable for c in history]),
             build_instructions=self.build_instructions,
             xunit_xml_report=self.xunit_xml_report,
         )
@@ -249,6 +261,7 @@ class Build(models.Model):
     branch = models.CharField(_('Branch'), max_length=1023)
     creation_date = models.DateTimeField(_('Date created'),
                                          default=datetime.datetime.now)
+    history = models.TextField(_('Changelog'), blank=True)
 
     # These fields are serialized from the project. Lets users safely alter
     # config values when a build has already been trigerred: the build
@@ -278,6 +291,10 @@ class Build(models.Model):
         Returns the build matrix, json-loaded.
         """
         return json.loads(self.matrix)
+
+    @property
+    def history_data(self):
+        return json.loads(self.history)
 
     @property
     def build_status(self):
