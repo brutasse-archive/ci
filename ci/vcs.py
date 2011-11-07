@@ -1,5 +1,7 @@
+import anyjson as json
 import os
 
+from datetime import datetime
 from StringIO import StringIO
 
 from dulwich.repo import Repo
@@ -7,6 +9,27 @@ from dulwich.walk import Walker
 from mercurial import ui, hg
 
 from .projects.utils import Command
+
+
+class Commit(object):
+    """
+    A common object to represent a commit.
+    """
+    def __init__(self, rev, author, timestamp, message, files):
+        self.rev = rev
+        self.author = author
+        self.timestamp = timestamp
+        self.message = message
+        self.files = files
+
+    def dump(self):
+        return json.dumps({
+            'rev': self.rev,
+            'author': self.author,
+            'timestamp': self.timestamp.isoformat(),
+            'message': self.message,
+            'files': self.files,
+        })
 
 
 class Vcs(object):
@@ -22,7 +45,9 @@ class Git(Vcs):
     def repo(self):
         """Needed as a property since self.path may not exist at
         instanciation time."""
-        return Repo(self.path)
+        if not hasattr(self, '_repo'):
+            self._repo = Repo(self.path)
+        return self._repo
 
     def update_source(self):
         """
@@ -70,7 +95,15 @@ class Git(Vcs):
         for entry in walker:
             if since is not None and entry.commit.id == since:
                 break
-            yield entry.commit
+            commit = entry.commit
+            files = Command('cd %s && git show --pretty="format:" --name-only %s' % (self.path, commit.id)).out.split()
+            yield Commit(
+                commit.id,
+                commit.committer,
+                datetime.fromtimestamp(commit.commit_time),
+                commit.message,
+                files,
+            )
 
 
 class ci(ui.ui):
@@ -81,6 +114,12 @@ class ci(ui.ui):
 
 class Hg(Vcs):
     default_branch = 'default'
+
+    @property
+    def repo(self):
+        if not hasattr(self, '_repo'):
+            self._repo = hg.repository(ci(), self.path)
+        return self._repo
 
     def update_source(self):
         if os.path.exists(self.path):
@@ -93,14 +132,29 @@ class Hg(Vcs):
         return self.latest_branch_revision('default')
 
     def branches(self):
-        repo = hg.repository(ci(), self.path)
-        return sorted(repo.branchtags().keys())
+        return sorted(self.repo.branchtags().keys())
 
     def latest_branch_revision(self, branch):
-        repo = hg.repository(ci(), self.path)
-        return repo.changelog.rev(repo.branchtags()[branch])
+        return self.repo.changelog.rev(self.repo.branchtags()[branch])
 
     def checkout(self, branch, revision):
         Command('cd %s && hg update -C %s && hg update -r %s' % (
             self.path, branch, revision,
         ))
+
+    def changelog(self, branch, since=None):
+        current_ctx = self.repo.changectx(self.latest_branch_revision(branch))
+        watch = [current_ctx]
+        while watch:
+            head = watch.pop(0)
+            parents = [p for p in head.parents() if p.branch() == branch]
+            watch.extend(parents)
+            if head.rev() in [-1, since]:
+                break
+            yield Commit(
+                head.rev(),
+                head.user(),
+                datetime.fromtimestamp(head.date()[0]),
+                head.description(),
+                head.files(),
+            )

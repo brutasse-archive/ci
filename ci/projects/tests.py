@@ -498,7 +498,7 @@ class GitBuildTest(TestCase):
         vcs.update_source()
         self.assertEqual(vcs.latest_revision(), 1)
 
-    def test_history(self):
+    def test_git_history(self):
         """Fetching changelog for each build"""
         self._create_project()
 
@@ -507,3 +507,27 @@ class GitBuildTest(TestCase):
         self.assertEqual(len(list(vcs.changelog(
             'master', since='08df487ae5005c2e699e3030c236c56356f398f8',
         ))), 1)
+
+    def test_hg_history(self):
+        self._create_project()
+        shutil.rmtree(os.path.join(settings.WORKSPACE, 'repos'))
+        self.project.slug = 'hgrepo'
+        self.project.repo = os.path.abspath(os.path.join(self.data_dir,
+                                                         self.hg_name))
+        self.project.repo_type = self.project.HG
+        self.project.save()
+        vcs = self.project.vcs()
+        vcs.update_source()
+
+        self.assertEqual(len(list(vcs.changelog('default'))), 2)
+        self.assertEqual(len(list(vcs.changelog('default', 0))), 1)
+
+        Command(
+            ('cd %s && '
+             'hg branch foo && '
+             'hg ci -m "Creating branch foo"') % self.project.repo
+        )
+        self.project.update_source()
+        vcs = self.project.vcs()
+        self.assertEqual(len(list(vcs.changelog('foo'))), 1)
+        self.assertEqual(len(list(vcs.changelog('default'))), 2)
