@@ -537,7 +537,8 @@ class GitBuildTest(TestCase):
         self.project.build_branches = Project.ALL_BRANCHES
         self.project.save()
         self.assertTrue(self.project.build())
-        self.assertEqual(len(Build.objects.get().history_data), 2)
+        # First build - no history
+        self.assertEqual(len(Build.objects.get().history_data), 0)
 
         # New branch, 1 commit away from master
         Command(
@@ -550,8 +551,8 @@ class GitBuildTest(TestCase):
         )
 
         self.assertTrue(self.project.build())
-        # 1 new commit from last build
-        self.assertEqual(len(self.project.builds.all()[0].history_data), 1)
+        # 1 new commit from last build bur first time branch was built
+        self.assertEqual(len(self.project.builds.all()[0].history_data), 0)
 
         # New commit to master
         Command(

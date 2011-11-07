@@ -144,16 +144,15 @@ class Project(models.Model):
         else:
             matrix = {}
 
-        # Attach some history info
+        # Attach some history info. If the branch hasn't been built yet,
+        # forget about history -- we don't want to walk through the
+        # entire repo.
         last_rev = None
         same_branch = self.builds.filter(branch=branch)
         if same_branch:
-            last_rev = same_branch[0].revision
+            history = self.vcs().changelog(branch, same_branch[0].revision)
         else:
-            prev_build = self.builds.all()[:1]
-            if prev_build:
-                last_rev = prev_build[0].revision
-        history = self.vcs().changelog(branch, last_rev)
+            history = []
 
         build = Build.objects.create(
             project=self,
