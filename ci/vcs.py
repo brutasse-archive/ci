@@ -1,4 +1,3 @@
-import anyjson as json
 import os
 
 from datetime import datetime
@@ -8,7 +7,7 @@ from dulwich.repo import Repo
 from dulwich.walk import Walker
 from mercurial import ui, hg
 
-from .projects.utils import Command
+from .shell import Command
 
 
 class Commit(object):
@@ -56,7 +55,7 @@ class Git(Vcs):
             )
         else:
             cmd = 'git clone %s %s' % (self.repo_url, self.path)
-        command = Command(cmd)
+        Command(cmd)
 
     def latest_revision(self):
         return self.latest_branch_revision('master')
@@ -88,7 +87,6 @@ class Git(Vcs):
         Returns the commits made in branch <branch> since revision <since>.
         """
         walker = Walker(self.repo, [self.latest_branch_revision(branch)])
-        commits = []
         for entry in walker:
             if since is not None and entry.commit.id == since:
                 break
@@ -123,7 +121,7 @@ class Hg(Vcs):
             cmd = 'cd %s && hg pull && hg update -C' % self.path
         else:
             cmd = 'hg clone %s %s' % (self.repo_url, self.path)
-        command = Command(cmd)
+        Command(cmd)
 
     def latest_revision(self):
         return self.latest_branch_revision('default')

@@ -9,9 +9,9 @@ from django.test import TestCase
 
 from celery.decorators import task
 
+from ..shell import Command
 from . import tasks
 from .models import Project, Configuration, Value, Build, Job
-from .utils import Command
 
 
 class ProjectTests(TestCase):

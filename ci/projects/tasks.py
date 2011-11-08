@@ -1,6 +1,6 @@
 from celery.decorators import task
 
-from .exceptions import CommandError
+from ..exceptions import CommandError
 from .models import Job, Project
 
 

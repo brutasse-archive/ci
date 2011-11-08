@@ -80,7 +80,7 @@ class LiveTests(TestCase):
             branch="master",
             build_instructions=BUILD,
         )
-        job = build.jobs.create()
+        build.jobs.create()
         build.queue()
         self.assertTrue("Ran 1 test in " in build.jobs.get().output)
 

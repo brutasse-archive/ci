@@ -11,9 +11,9 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from .. import vcs
+from ..exceptions import CommandError
+from ..shell import Command
 from ..parsers import XunitParser
-from .exceptions import CommandError
-from .utils import Command
 
 logger = logging.getLogger('ci')
 
@@ -147,7 +147,6 @@ class Project(models.Model):
         # Attach some history info. If the branch hasn't been built yet,
         # forget about history -- we don't want to walk through the
         # entire repo.
-        last_rev = None
         same_branch = self.builds.filter(branch=branch)
         if same_branch:
             history = self.vcs().changelog(branch, same_branch[0].revision)
