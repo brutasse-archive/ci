@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load truncate %}
 
 {% block title %}{% blocktrans with object.pk as build_id %}Build #{{ build_id }} of {{ project }}{% endblocktrans %}{% endblock %}
 
@@ -36,5 +37,17 @@
 		{% if object.build_status == "failed" or object.build_status = "success" %}
 			<p class="delete"><a href="{% url "delete_build" object.project.slug object.pk %}">{% trans "Delete build" %}</a></p>
 		{% endif %}
+
+		<h2>{% trans "Changelog" %}</h2>
+		<ul>
+			{% for commit in object.history_data %}
+				<li class="commit">
+					<div class="rev">{{ commit.rev|truncatechars:"8" }} - {{ commit.author }}</div>
+					<div class="message">{{ commit.message }}</div>
+					<pre>{% for file in commit.files %}{{ file }}
+{% endfor %}</pre>
+				</li>
+			{% endfor %}
+		</ul>
 	</section>
 {% endblock %}

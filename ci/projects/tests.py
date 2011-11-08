@@ -41,6 +41,7 @@ class ProjectTests(TestCase):
             'matrix': json.dumps({'python': ['py25', 'py26', 'py27'],
                                   'django': ['1.2', '1.3', 'trunk']}),
             'revision': '1',
+            'history': '[]',
         }
         defaults.update(kwargs)
         self.build = Build.objects.create(**defaults)

@@ -144,6 +144,7 @@ h1 {
 }
 h2 {
 	font-size: 1.6em;
+	line-height: 1.2em;
 	margin: 16px 0;
 }
 h3 {
@@ -301,6 +302,17 @@ strong {
 	}
 	.running span {
 		@include notice-badge;
+	}
+}
+
+.commit {
+	padding: 5px 0;
+	.rev {
+		color: lighten($text-color, 20%);
+		font-size: 0.8em;
+	}
+	.message {
+		line-height: 1.3em;
 	}
 }
 
