@@ -8,7 +8,8 @@ logger = logging.getLogger('ci')
 
 
 class Command(object):
-    def __init__(self, command, stdin=None, environ={}, stream_to=None):
+    def __init__(self, command, stdin=None, environ={}, stream_to=None,
+                 cwd=None):
         self.command = command
         env = os.environ
         env.update(environ)
@@ -19,6 +20,7 @@ class Command(object):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            cwd=cwd,
         )
         self.out = ''
         logger.info("Running: '%s'" % self.command)

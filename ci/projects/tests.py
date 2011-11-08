@@ -416,12 +416,10 @@ class GitBuildTest(TestCase):
         self.assertEqual(Build.objects.count(), 1)
 
         Command(
-            ('cd %s && '
-             'git checkout -b foo && '
+            ('git checkout -b foo && '
              'echo "yay" >> README && '
-             'git commit -am "Added stuff to branch foo"') % (
-                 self.project.repo
-             )
+             'git commit -am "Added stuff to branch foo"'),
+            cwd=self.project.repo,
         )
         self.project.update_source()
         self.assertEqual(self.project.vcs().branches(), ['foo', 'master'])
@@ -447,9 +445,9 @@ class GitBuildTest(TestCase):
         self.assertEqual(Build.objects.count(), 1)
 
         Command(
-            ('cd %s && '
-             'hg branch foo && '
-             'hg ci -m "Creating branch foo"') % project.repo
+            ('hg branch foo && '
+             'hg ci -m "Creating branch foo"'),
+            cwd=project.repo
         )
 
         self.assertEqual(project.vcs().branches(), ['default'])
@@ -523,9 +521,9 @@ class GitBuildTest(TestCase):
         self.assertEqual(len(list(vcs.changelog('default', 0))), 1)
 
         Command(
-            ('cd %s && '
-             'hg branch foo && '
-             'hg ci -m "Creating branch foo"') % self.project.repo
+            ('hg branch foo && '
+             'hg ci -m "Creating branch foo"'),
+            cwd=self.project.repo
         )
         self.project.update_source()
         vcs = self.project.vcs()
@@ -542,12 +540,10 @@ class GitBuildTest(TestCase):
 
         # New branch, 1 commit away from master
         Command(
-            ('cd %s && '
-             'git checkout -b foo && '
+            ('git checkout -b foo && '
              'echo "yay" >> README && '
-             'git commit -am "Added stuff to branch foo"') % (
-                 self.project.repo
-             )
+             'git commit -am "Added stuff to branch foo"'),
+            cwd=self.project.repo,
         )
 
         self.assertTrue(self.project.build())
@@ -556,12 +552,10 @@ class GitBuildTest(TestCase):
 
         # New commit to master
         Command(
-            ('cd %s && '
-             'git checkout master && '
+            ('git checkout master && '
              'echo "foobar" >> README && '
-             'git commit -am "More instructions"') % (
-                 self.project.repo
-             )
+             'git commit -am "More instructions"'),
+            cwd=self.project.repo,
         )
         self.assertTrue(self.project.build())
         last_build = self.project.builds.all()[0]

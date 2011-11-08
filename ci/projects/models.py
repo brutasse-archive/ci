@@ -438,8 +438,8 @@ class Job(models.Model):
         logger.info("Running build script")
         self.output += '[CI] Running build script...\n'
         self.save()
-        cmd = Command('cd %s && sh ci-run.sh' % self.build_path,
-                      environ=env, stream_to=self.stream_to)
+        cmd = Command('sh ci-run.sh', environ=env, stream_to=self.stream_to,
+                      cwd=self.build_path)
         self.output += cmd.out
 
     def fetch_reports(self):

@@ -49,13 +49,13 @@ class Git(Vcs):
         """
         Clones if the project hasn't been cloned yet. Fetches otherwise.
         """
+        cwd = None
         if os.path.exists(self.path):
-            cmd = 'cd %s && git fetch && git reset --hard origin/master' % (
-                self.path,
-            )
+            cwd = self.path
+            cmd = 'git fetch && git reset --hard origin/master'
         else:
             cmd = 'git clone %s %s' % (self.repo_url, self.path)
-        Command(cmd)
+        Command(cmd, cwd=cwd)
 
     def latest_revision(self):
         return self.latest_branch_revision('master')
@@ -72,9 +72,9 @@ class Git(Vcs):
         ])
 
     def checkout(self, branch, revision):
-        Command('cd %s && git checkout %s && git reset --hard %s' % (
-            self.path, branch, revision,
-        ))
+        Command('git checkout %s && git reset --hard %s' % (
+            branch, revision,
+        ), cwd=self.path)
 
     def latest_branch_revision(self, branch):
         """
@@ -91,7 +91,10 @@ class Git(Vcs):
             if since is not None and entry.commit.id == since:
                 break
             commit = entry.commit
-            files = Command('cd %s && git show --pretty="format:" --name-only %s' % (self.path, commit.id)).out.split()
+            files = Command(
+                'git show --pretty="format:" --name-only %s' % commit.id,
+                cwd=self.path,
+            ).out.split()
             yield Commit(
                 commit.id,
                 commit.committer,
@@ -117,11 +120,13 @@ class Hg(Vcs):
         return self._repo
 
     def update_source(self):
+        cwd = None
         if os.path.exists(self.path):
-            cmd = 'cd %s && hg pull && hg update -C' % self.path
+            cwd = self.path
+            cmd = 'hg pull && hg update -C'
         else:
             cmd = 'hg clone %s %s' % (self.repo_url, self.path)
-        Command(cmd)
+        Command(cmd, cwd=cwd)
 
     def latest_revision(self):
         return self.latest_branch_revision('default')
@@ -133,9 +138,9 @@ class Hg(Vcs):
         return self.repo.changelog.rev(self.repo.branchtags()[branch])
 
     def checkout(self, branch, revision):
-        Command('cd %s && hg update -C %s && hg update -r %s' % (
-            self.path, branch, revision,
-        ))
+        Command('hg update -C %s && hg update -r %s' % (
+            branch, revision,
+        ), cwd=self.path)
 
     def changelog(self, branch, since=None):
         current_ctx = self.repo.changectx(self.latest_branch_revision(branch))
