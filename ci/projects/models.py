@@ -400,15 +400,16 @@ class Job(models.Model):
         self.delete_build_data()
         self.output = ''
 
-        try:
-            self.checkout_source()
-            self.run()
-            self.fetch_reports()
+        for step in [self.checkout_source, self.run, self.fetch_reports]:
+            try:
+                step()
+            except CommandError as e:
+                self.output += str(e) + '\n'
+                self.output += e.command.out
+                self.status = self.FAILURE
+
+        if self.status != self.FAILURE:
             self.status = self.SUCCESS
-        except CommandError as e:
-            self.output += str(e) + '\n'
-            self.output += e.command.out
-            self.status = self.FAILURE
 
         logger.info("%s finished: %s" % (self.__unicode__(),
                                          self.status.upper()))
@@ -434,11 +435,22 @@ class Job(models.Model):
         logger.info("Generating build script")
         env = json.loads(self.values) if self.values else {}
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
+            # Trap errors but carry on execution
+            f.write("""#! /usr/bin/env bash
+set -Ev
+trap onexit 1 2 3 15 ERR
+EXIT=0
+function onexit() {
+    EXIT=${1:-$?}
+}
+""")
             f.write(self.build.build_instructions.replace('\r\n', '\n'))
+            f.write('\nexit $EXIT\n')
         logger.info("Running build script")
         self.output += '[CI] Running build script...\n'
         self.save()
-        cmd = Command('sh ci-run.sh', environ=env, stream_to=self.stream_to,
+        Command('chmod +x ci-run.sh', cwd=self.build_path)
+        cmd = Command('./ci-run.sh', environ=env, stream_to=self.stream_to,
                       cwd=self.build_path)
         self.output += cmd.out
 
