@@ -437,7 +437,7 @@ class Job(models.Model):
         with open(os.path.join(self.build_path, 'ci-run.sh'), 'wb') as f:
             # Trap errors but carry on execution
             f.write("""#! /usr/bin/env bash
-set -Ev
+set -Ex
 trap onexit 1 2 3 15 ERR
 EXIT=0
 function onexit() {
