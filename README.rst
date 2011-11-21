@@ -42,7 +42,19 @@ Setup your environment::
 
     git clone git://github.com/brutasse/ci.git
     cd ci
-    sh bootstrap.sh
+
+    # Python environment
+    mkvirtualenv --no-site-packages --python python2 ci
+    workon ci
+    add2virtualenv .
+    pip install -U pip
+    pip install -r requirements.txt
+
+    # Ruby tools -- foreman / compass
+    gem install bundle
+    bundle install
+
+    # Create the development database
     make db
 
 Get `gorun`_.
