@@ -15,10 +15,14 @@
 		</div>
 
 		<div class="summary">
-			<h6>{% trans "Configuration values" %}</h6>
-			<ul>{% for key, value in object.values_data.items %}
-					<li><strong>{{ key }}</strong>: {{ value }}</li>
-			{% endfor %}</li>
+			{% if object.values_data %}
+				<h6>{% trans "Configuration values" %}</h6>
+				<ul>{% for key, value in object.values_data.items %}
+						<li><strong>{{ key }}</strong>: {{ value }}</li>
+				{% endfor %}</li>
+			{% else %}
+				&nbsp;
+			{% endif %}
 		</div>
 
 		<div class="output">
