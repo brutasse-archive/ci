@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}{% blocktrans with object_pk=object.pk build_pk=object.build_id %}Job #{{ object_pk }} of build #{{ build_pk }}{% endblocktrans %}{% endblock %}
+
 {% block content %}
 	<section class="build">
 		<h1>
